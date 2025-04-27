@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">App InvV1</string>
+    <string name="default_notification_channel_id">critical_products_channel</string>
+    <string name="default_notification_channel_name">Alertes produits critiques</string>
+    <string name="default_notification_channel_description">Notifications pour les produits critiques</string>
+</resources> 

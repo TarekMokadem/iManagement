@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "559164198600",
+    "project_id": "imanagement-7bd21",
+    "storage_bucket": "imanagement-7bd21.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:559164198600:android:52c0a38fdf441b964edffd",
+        "android_client_info": {
+          "package_name": "com.example.app_invv1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFIaOwx6gvfxYsjUhAuGC-JkSlMvF5qsw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:559164198600:android:b11094dc0a4e97af4edffd",
+        "android_client_info": {
+          "package_name": "com.example.inventory_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFIaOwx6gvfxYsjUhAuGC-JkSlMvF5qsw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,37 @@
+name: app_invv1
+description: Application de gestion d'inventaire
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.5 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  firebase_core: ^2.27.1
+  firebase_auth: ^4.17.9
+  cloud_firestore: ^4.15.9
+  firebase_messaging: ^14.7.9
+  firebase_storage: ^11.5.6
+  syncfusion_flutter_datagrid: ^24.1.41
+  syncfusion_flutter_xlsio: ^24.2.9
+  provider: ^6.1.2
+  path_provider: ^2.1.1
+  intl: ^0.19.0
+  excel: ^2.1.0
+  permission_handler: ^11.1.0
+  flutter_local_notifications: ^17.0.0
+  js: ^0.6.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true 
