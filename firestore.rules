@@ -1,4 +1,50 @@
 rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function hasAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: verify user is member of the tenant in document data
+    function isMemberOfTenant(tenantId) {
+      return exists(
+        /databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId)
+      );
+    }
+
+    // Products
+    match /products/{docId} {
+      allow read, write: if hasAuth() &&
+        isMemberOfTenant(resource.data.tenantId);
+    }
+
+    // Users collection (app-level, not Firebase Auth)
+    match /users/{docId} {
+      allow read, write: if hasAuth() &&
+        isMemberOfTenant(resource.data.tenantId);
+    }
+
+    // Operations
+    match /operations/{docId} {
+      allow read, write: if hasAuth() &&
+        isMemberOfTenant(resource.data.tenantId);
+    }
+
+    // Tenants metadata (read-only for members, write by admins to be refined)
+    match /tenants/{tenantId} {
+      allow read: if hasAuth() && isMemberOfTenant(tenantId);
+      allow write: if false; // à préciser plus tard (admin only)
+    }
+
+    // Memberships (read own memberships)
+    match /memberships/{docId} {
+      allow read: if hasAuth();
+      allow write: if false; // géré côté back-office / scripts
+    }
+  }
+}
+
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
