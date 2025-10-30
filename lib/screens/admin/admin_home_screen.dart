@@ -9,6 +9,7 @@ import 'user_management_screen.dart';
 import 'alert_history_screen.dart';
 import 'operations_history_screen.dart';
 import '../../services/auth_service.dart';
+import 'statistics_screen.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   final String userId;
@@ -142,6 +143,27 @@ class AdminHomeScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => CriticalProductsScreen(
+                                userId: userId,
+                                userName: userName,
+                              ),
+                            ),
+                          );
+                        },
+                        iconSize: iconSize,
+                        fontSize: fontSize,
+                        cardHeight: cardHeight,
+                        cardWidth: cardWidth,
+                        isDesktop: isDesktop,
+                      ),
+                      _buildCard(
+                        context,
+                        icon: Icons.bar_chart,
+                        title: 'Statistiques',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StatisticsScreen(
                                 userId: userId,
                                 userName: userName,
                               ),
