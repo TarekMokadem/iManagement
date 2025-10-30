@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/tenant_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -39,6 +41,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final user = await _authService.login(_codeController.text);
+      if (mounted) {
+        Provider.of<TenantProvider>(context, listen: false)
+            .setTenant(tenantId: user.tenantId);
+      }
       if (!mounted) return;
 
       Navigator.pushReplacementNamed(

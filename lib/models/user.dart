@@ -3,12 +3,14 @@ class AppUser {
   final String name;
   final String code;
   final bool isAdmin;
+  final String tenantId;
 
   AppUser({
     required this.id,
     required this.name,
     required this.code,
     required this.isAdmin,
+    required this.tenantId,
   });
 
   Map<String, dynamic> toMap() {
@@ -16,6 +18,7 @@ class AppUser {
       'name': name,
       'code': code,
       'isAdmin': isAdmin,
+      'tenantId': tenantId,
     };
   }
 
@@ -25,6 +28,7 @@ class AppUser {
       name: map['name'] as String,
       code: map['code'] as String,
       isAdmin: map['isAdmin'] as bool,
+      tenantId: (map['tenantId'] as String?) ?? 'default',
     );
   }
 
@@ -33,12 +37,14 @@ class AppUser {
     String? name,
     String? code,
     bool? isAdmin,
+    String? tenantId,
   }) {
     return AppUser(
       id: id ?? this.id,
       name: name ?? this.name,
       code: code ?? this.code,
       isAdmin: isAdmin ?? this.isAdmin,
+      tenantId: tenantId ?? this.tenantId,
     );
   }
 } 

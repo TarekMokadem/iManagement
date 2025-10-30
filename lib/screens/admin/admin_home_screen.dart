@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../widgets/export_button.dart';
 import '../../widgets/action_button.dart';
 import 'critical_products_screen.dart';
 import 'product_management_screen.dart';
 import 'user_management_screen.dart';
-import 'alert_history_screen.dart';
 import 'operations_history_screen.dart';
-import '../../services/auth_service.dart';
 import 'statistics_screen.dart';
+import 'billing_screen.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   final String userId;
@@ -167,6 +163,24 @@ class AdminHomeScreen extends StatelessWidget {
                                 userId: userId,
                                 userName: userName,
                               ),
+                            ),
+                          );
+                        },
+                        iconSize: iconSize,
+                        fontSize: fontSize,
+                        cardHeight: cardHeight,
+                        cardWidth: cardWidth,
+                        isDesktop: isDesktop,
+                      ),
+                      _buildCard(
+                        context,
+                        icon: Icons.credit_card,
+                        title: 'Plans &\nFacturation',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BillingScreen(),
                             ),
                           );
                         },

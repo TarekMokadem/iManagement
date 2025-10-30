@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 // import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
+import 'package:provider/provider.dart';
+import 'providers/tenant_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/employee_home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
@@ -19,7 +21,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TenantProvider()),
+      ],
+      child: MaterialApp(
       title: 'InvV1',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
@@ -51,6 +57,7 @@ class MyApp extends StatelessWidget {
           );
         },
       },
+      ),
     );
   }
 } 
