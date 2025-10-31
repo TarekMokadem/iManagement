@@ -290,6 +290,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   name: nameController.text.trim(),
                   code: codeController.text.trim(),
                   isAdmin: isAdmin,
+                  tenantId: 'default',
                 );
 
                 await _userService.addUser(newUser);

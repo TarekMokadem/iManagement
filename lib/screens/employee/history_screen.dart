@@ -74,7 +74,7 @@ class HistoryScreen extends StatelessWidget {
             itemCount: operations.length,
             itemBuilder: (context, index) {
               final operation = operations[index];
-              final isEntry = operation.type == OperationType.entry;
+              final isEntry = operation.type == OperationType.entree;
               
               return Card(
                 margin: const EdgeInsets.symmetric(
@@ -102,7 +102,7 @@ class HistoryScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        DateFormat('dd/MM/yyyy HH:mm').format(operation.timestamp),
+                        DateFormat('dd/MM/yyyy HH:mm').format(operation.dateTime),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -117,7 +117,7 @@ class HistoryScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      operation.typeString.toUpperCase(),
+                      operation.type.toString().split('.').last.toUpperCase(),
                       style: TextStyle(
                         color: isEntry ? Colors.green.shade900 : Colors.red.shade900,
                         fontWeight: FontWeight.bold,
