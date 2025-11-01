@@ -11,7 +11,7 @@ class BillingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tenant = context.watch<TenantProvider>();
     final billing = BillingService(workerBaseUrl: 'https://imanagement.mokadem59200.workers.dev');
-    const priceId = 'price_1SOhH0BefWQoVTT0WGmNIldg';
+    const priceId = 'price_1SOlYFBefWQoVTT09yR9vm8Y';
 
     return Scaffold(
       appBar: AppBar(
