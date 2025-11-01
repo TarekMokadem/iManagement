@@ -130,6 +130,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ],
+                const SizedBox(height: 12),
+                const Text(
+                  'Comptes de démonstration:\n- admin : admin123\n- employé : emp123',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
