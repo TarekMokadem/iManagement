@@ -7,6 +7,8 @@ import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/employee_home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
+import 'screens/checkout_success_screen.dart';
+import 'screens/checkout_cancel_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +44,8 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/success': (context) => const CheckoutSuccessScreen(),
+        '/cancel': (context) => const CheckoutCancelScreen(),
         '/employee': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
           return EmployeeHomeScreen(

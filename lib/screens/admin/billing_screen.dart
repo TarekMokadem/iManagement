@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/tenant_provider.dart';
+import '../../services/billing_service.dart';
 
 class BillingScreen extends StatelessWidget {
   const BillingScreen({super.key});
@@ -8,6 +10,8 @@ class BillingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tenant = context.watch<TenantProvider>();
+    final billing = BillingService(workerBaseUrl: 'https://mokadem59200.workers.dev');
+    const priceId = 'price_1SOhH0BefWQoVTT0WGmNIldg';
 
     return Scaffold(
       appBar: AppBar(
@@ -38,16 +42,49 @@ class BillingScreen extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Portail Stripe à venir')),
-                  );
-                },
-                child: const Text('Gérer mon abonnement'),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final checkoutUrl = await billing.createCheckoutSession(
+                        priceId: priceId,
+                        successUrl: 'https://imanagement.pages.dev/success',
+                        cancelUrl: 'https://imanagement.pages.dev/cancel',
+                      );
+                      await launchUrl(checkoutUrl, mode: LaunchMode.externalApplication);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erreur Checkout: $e')),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.shopping_cart_checkout),
+                  label: const Text('S’abonner (Checkout)'),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      // TODO: récupérer customerId du tenant lorsque disponible
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Portail client sera activé quand customerId sera disponible')),
+                      );
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erreur portail: $e')),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.manage_accounts),
+                  label: const Text('Gérer mon abonnement (Portail)'),
+                ),
+              ],
             ),
           ],
         ),
