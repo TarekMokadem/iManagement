@@ -221,7 +221,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             barTouchData: BarTouchData(
                               enabled: true,
                               touchTooltipData: BarTouchTooltipData(
-                                tooltipBgColor: Colors.blueGrey,
                                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                   final topProducts = dailyTopProducts[groupIndex];
                                   final topProductsText = topProducts.take(3).map((e) => 
