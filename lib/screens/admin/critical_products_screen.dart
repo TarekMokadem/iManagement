@@ -180,7 +180,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
     final quantityController = TextEditingController(text: product.quantity.toString());
     final thresholdController = TextEditingController(text: product.criticalThreshold.toString());
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Modifier le produit'),

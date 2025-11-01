@@ -260,7 +260,7 @@ class _OperationsHistoryScreenState extends State<OperationsHistoryScreen> {
   }
 
   void _showFilterDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) {
         return AlertDialog(

@@ -225,7 +225,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     final quantityController = TextEditingController();
     final thresholdController = TextEditingController();
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Ajouter un produit'),
@@ -285,7 +285,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     final quantityController = TextEditingController(text: product.quantity.toString());
     final thresholdController = TextEditingController(text: product.criticalThreshold.toString());
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Modifier le produit'),
@@ -339,7 +339,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
   }
 
   Future<void> _showDeleteConfirmationDialog(BuildContext context, Product product) async {
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer la suppression'),

@@ -223,7 +223,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final codeController = TextEditingController();
     bool isAdmin = false;
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -267,6 +267,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               onPressed: () async {
                 if (nameController.text.trim().isEmpty ||
                     codeController.text.trim().isEmpty) {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Veuillez remplir tous les champs'),
@@ -277,6 +278,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
                 final isCodeAvailable = await _userService.isCodeAvailable(codeController.text.trim());
                 if (!isCodeAvailable) {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Ce code est déjà utilisé'),
@@ -294,6 +296,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 );
 
                 await _userService.addUser(newUser);
+                if (!mounted) return;
                 Navigator.pop(context);
               },
               child: const Text('Ajouter'),
@@ -309,7 +312,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final codeController = TextEditingController(text: user.code);
     bool isAdmin = user.isAdmin;
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -364,6 +367,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 if (codeController.text.trim() != user.code) {
                   final isCodeAvailable = await _userService.isCodeAvailable(codeController.text.trim());
                   if (!isCodeAvailable) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Ce code est déjà utilisé'),
@@ -380,6 +384,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 );
 
                 await _userService.updateUser(user.id, updatedUser);
+                if (!mounted) return;
                 Navigator.pop(context);
               },
               child: const Text('Modifier'),
@@ -391,7 +396,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Future<void> _showDeleteConfirmationDialog(BuildContext context, AppUser user) async {
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer la suppression'),

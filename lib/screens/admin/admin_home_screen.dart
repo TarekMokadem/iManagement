@@ -75,9 +75,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.inventory_2,
                         title: 'Gestion des\nproduits',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => ProductManagementScreen(
                                 userId: userId,
                                 userName: userName,
@@ -96,9 +96,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.people,
                         title: 'Gestion des\nutilisateurs',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => UserManagementScreen(
                                 userId: userId,
                                 userName: userName,
@@ -117,9 +117,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.history,
                         title: 'Historique des\nopérations',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => const OperationsHistoryScreen(),
                             ),
                           );
@@ -135,9 +135,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.warning,
                         title: 'Produits\ncritiques',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => CriticalProductsScreen(
                                 userId: userId,
                                 userName: userName,
@@ -156,9 +156,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.bar_chart,
                         title: 'Statistiques',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => StatisticsScreen(
                                 userId: userId,
                                 userName: userName,
@@ -177,9 +177,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.credit_card,
                         title: 'Plans &\nFacturation',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => const BillingScreen(),
                             ),
                           );

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../models/product.dart';
 import '../../services/product_service.dart';
 import '../../services/operation_service.dart';
 import '../../models/operation.dart';
-import 'package:intl/intl.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final String userId;

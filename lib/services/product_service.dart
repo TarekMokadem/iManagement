@@ -6,7 +6,6 @@ import 'operation_service.dart';
 class ProductService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'products';
-  final OperationService _operationService = OperationService();
 
   // Obtenir tous les produits
   Stream<List<Product>> getAllProducts() {
