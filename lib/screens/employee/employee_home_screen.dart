@@ -22,8 +22,8 @@ class EmployeeHomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
+              Navigator.of(context).pushReplacement<void, void>(
+                MaterialPageRoute<void>(
                   builder: (context) => const LoginScreen(),
                 ),
               );
@@ -42,9 +42,9 @@ class EmployeeHomeScreen extends StatelessWidget {
             'Liste des produits',
             Icons.list_alt,
             () {
-              Navigator.push(
+              Navigator.push<void>(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (context) => ProductListScreen(
                     userId: userId,
                     userName: userName,
@@ -71,9 +71,9 @@ class EmployeeHomeScreen extends StatelessWidget {
             'Produits critiques',
             Icons.warning,
             () {
-              Navigator.push(
+              Navigator.push<void>(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (context) => CriticalProductsScreen(
                     userId: userId,
                     userName: userName,

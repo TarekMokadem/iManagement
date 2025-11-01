@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../widgets/export_button.dart';
 import '../../widgets/action_button.dart';
 import 'critical_products_screen.dart';
 import 'product_management_screen.dart';
 import 'user_management_screen.dart';
-import 'alert_history_screen.dart';
 import 'operations_history_screen.dart';
-import '../../services/auth_service.dart';
+import 'statistics_screen.dart';
+import 'billing_screen.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   final String userId;
@@ -78,9 +75,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.inventory_2,
                         title: 'Gestion des\nproduits',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => ProductManagementScreen(
                                 userId: userId,
                                 userName: userName,
@@ -99,9 +96,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.people,
                         title: 'Gestion des\nutilisateurs',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => UserManagementScreen(
                                 userId: userId,
                                 userName: userName,
@@ -120,9 +117,9 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.history,
                         title: 'Historique des\nopérations',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => const OperationsHistoryScreen(),
                             ),
                           );
@@ -138,13 +135,52 @@ class AdminHomeScreen extends StatelessWidget {
                         icon: Icons.warning,
                         title: 'Produits\ncritiques',
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => CriticalProductsScreen(
                                 userId: userId,
                                 userName: userName,
                               ),
+                            ),
+                          );
+                        },
+                        iconSize: iconSize,
+                        fontSize: fontSize,
+                        cardHeight: cardHeight,
+                        cardWidth: cardWidth,
+                        isDesktop: isDesktop,
+                      ),
+                      _buildCard(
+                        context,
+                        icon: Icons.bar_chart,
+                        title: 'Statistiques',
+                        onTap: () {
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (context) => StatisticsScreen(
+                                userId: userId,
+                                userName: userName,
+                              ),
+                            ),
+                          );
+                        },
+                        iconSize: iconSize,
+                        fontSize: fontSize,
+                        cardHeight: cardHeight,
+                        cardWidth: cardWidth,
+                        isDesktop: isDesktop,
+                      ),
+                      _buildCard(
+                        context,
+                        icon: Icons.credit_card,
+                        title: 'Plans &\nFacturation',
+                        onTap: () {
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (context) => const BillingScreen(),
                             ),
                           );
                         },

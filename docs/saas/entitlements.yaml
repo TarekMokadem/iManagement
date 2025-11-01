@@ -1,0 +1,15 @@
+plans:
+  free:
+    maxUsers: 3
+    maxProducts: 200
+    maxOperationsPerMonth: 1000
+    exports: true
+    support: community
+  pro:
+    maxUsers: 20
+    maxProducts: 10000
+    maxOperationsPerMonth: 100000
+    exports: true
+    support: priority
+
+

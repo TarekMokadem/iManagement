@@ -65,7 +65,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (widget.product == null) {
         await _productService.addProduct(product);
       } else {
-        await _productService.updateProduct(product);
+        await _productService.updateProduct(widget.product!.id, product);
       }
 
       if (mounted) {

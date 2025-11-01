@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/tenant_provider.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -14,11 +16,19 @@ class _LoginScreenState extends State<LoginScreen> {
   final _authService = AuthService();
   bool _isLoading = false;
   String? _errorMessage;
+  int _remainingAttempts = 3;
 
   @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadRemainingAttempts();
+  }
+
+  Future<void> _loadRemainingAttempts() async {
+    final attempts = await _authService.getRemainingAttempts();
+    setState(() {
+      _remainingAttempts = attempts;
+    });
   }
 
   Future<void> _login() async {
@@ -31,6 +41,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final user = await _authService.login(_codeController.text);
+      if (mounted) {
+        Provider.of<TenantProvider>(context, listen: false)
+            .setTenant(tenantId: user.tenantId);
+      }
       if (!mounted) return;
 
       Navigator.pushReplacementNamed(
@@ -43,8 +57,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       setState(() {
-        _errorMessage = 'Code invalide. Veuillez réessayer.';
+        _errorMessage = e.toString();
       });
+      await _loadRemainingAttempts();
     } finally {
       if (mounted) {
         setState(() {
@@ -94,15 +109,28 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-                if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if (_remainingAttempts < 3) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Il vous reste $_remainingAttempts tentative(s)',
+                    style: TextStyle(
+                      color: _remainingAttempts == 0 ? Colors.red : Colors.orange,
+                      fontSize: 14,
                     ),
                   ),
+                ],
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -119,5 +147,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
   }
 } 

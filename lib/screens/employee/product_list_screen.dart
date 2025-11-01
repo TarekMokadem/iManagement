@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
 import '../../widgets/loading_indicator.dart';
@@ -159,9 +158,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           ],
                         ),
                         onTap: () {
-                          Navigator.push(
+                          Navigator.push<void>(
                             context,
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => ProductDetailScreen(
                                 product: product,
                                 userId: widget.userId,
