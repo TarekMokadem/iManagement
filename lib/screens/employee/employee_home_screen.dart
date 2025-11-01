@@ -22,7 +22,7 @@ class EmployeeHomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              Navigator.of(context).pushReplacement<void>(
+              Navigator.of(context).pushReplacement<void, void>(
                 MaterialPageRoute<void>(
                   builder: (context) => const LoginScreen(),
                 ),
