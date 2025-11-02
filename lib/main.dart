@@ -13,6 +13,8 @@ import 'repositories/products_repository.dart';
 import 'repositories/firestore_products_repository.dart';
 import 'repositories/users_repository.dart';
 import 'repositories/firestore_users_repository.dart';
+import 'repositories/operations_repository.dart';
+import 'repositories/firestore_operations_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +35,7 @@ class MyApp extends StatelessWidget {
         // Repositories
         Provider<ProductsRepository>(create: (_) => FirestoreProductsRepository()),
         Provider<UsersRepository>(create: (_) => FirestoreUsersRepository()),
+        Provider<OperationsRepository>(create: (_) => FirestoreOperationsRepository()),
       ],
       child: MaterialApp(
       title: 'InvV1',

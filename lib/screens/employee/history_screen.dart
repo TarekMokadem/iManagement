@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../services/operation_service.dart';
 import '../../models/operation.dart';
+import 'package:provider/provider.dart';
+import '../../repositories/operations_repository.dart';
+import '../../providers/tenant_provider.dart';
 import 'package:intl/intl.dart';
 
 class HistoryScreen extends StatelessWidget {
-  final OperationService _operationService = OperationService();
   final String userId;
 
   HistoryScreen({super.key, required this.userId});
@@ -16,7 +17,8 @@ class HistoryScreen extends StatelessWidget {
         title: const Text('Historique des opérations'),
       ),
       body: StreamBuilder<List<Operation>>(
-        stream: _operationService.getAllOperations(),
+        stream: Provider.of<OperationsRepository>(context, listen: false)
+            .watchAll(tenantId: Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default'),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../models/operation.dart';
-import '../../services/operation_service.dart';
+import 'package:provider/provider.dart';
+import '../../repositories/operations_repository.dart';
+import '../../providers/tenant_provider.dart';
 
 class OperationsHistoryScreen extends StatefulWidget {
   const OperationsHistoryScreen({Key? key}) : super(key: key);
@@ -12,7 +14,6 @@ class OperationsHistoryScreen extends StatefulWidget {
 }
 
 class _OperationsHistoryScreenState extends State<OperationsHistoryScreen> {
-  final OperationService _operationService = OperationService();
   OperationType? _selectedType;
   String _searchQuery = '';
   DateTime? _selectedDate;
@@ -23,13 +24,15 @@ class _OperationsHistoryScreenState extends State<OperationsHistoryScreen> {
     initializeDateFormatting('fr_FR');
   }
 
-  Stream<List<Operation>> _getFilteredOperations() {
+  Stream<List<Operation>> _getFilteredOperations(BuildContext context) {
+    final repo = Provider.of<OperationsRepository>(context, listen: false);
+    final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
     if (_selectedDate != null) {
-      return _operationService.getOperationsByDate(_selectedDate!);
+      return repo.watchByDate(_selectedDate!, tenantId: tenantId);
     } else if (_selectedType != null) {
-      return _operationService.getOperationsByType(_selectedType!);
+      return repo.watchByType(_selectedType!, tenantId: tenantId);
     }
-    return _operationService.getAllOperations();
+    return repo.watchAll(tenantId: tenantId);
   }
 
   Future<void> _selectDate() async {
@@ -174,7 +177,7 @@ class _OperationsHistoryScreenState extends State<OperationsHistoryScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Operation>>(
-              stream: _getFilteredOperations(),
+              stream: _getFilteredOperations(context),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
