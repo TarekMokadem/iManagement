@@ -1,45 +1,63 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function hasAuth() {
-      return request.auth != null;
-    }
+    function hasAuth() { return request.auth != null; }
 
-    // Helper: verify user is member of the tenant in document data
+    // Vérifie qu'un doc membership existe sous forme {id: uid_tenantId}
     function isMemberOfTenant(tenantId) {
-      return exists(
+      return hasAuth() && exists(
         /databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId)
       );
     }
 
-    // Products
+    // Helper to read the tenantId from the resource (for read/update/delete)
+    function resourceTenantId() {
+      return resource.data.tenantId;
+    }
+    // Helper to read the tenantId from the incoming write (for create/update)
+    function requestTenantId() {
+      return request.resource.data.tenantId;
+    }
+
+    // Produits
     match /products/{docId} {
-      allow read, write: if hasAuth() &&
-        isMemberOfTenant(resource.data.tenantId);
+      // Lire uniquement si membre du tenant du document
+      allow get, list: if hasAuth() && isMemberOfTenant(resourceTenantId());
+      // Créer: membre du tenant et cohérence tenantId
+      allow create: if hasAuth() && isMemberOfTenant(requestTenantId());
+      // Mettre à jour: membre du tenant et tenantId inchangé
+      allow update: if hasAuth() && isMemberOfTenant(resourceTenantId()) &&
+        requestTenantId() == resourceTenantId();
+      // Supprimer: membre du tenant
+      allow delete: if hasAuth() && isMemberOfTenant(resourceTenantId());
     }
 
-    // Users collection (app-level, not Firebase Auth)
+    // Utilisateurs (collection applicative, pas Firebase Auth)
     match /users/{docId} {
-      allow read, write: if hasAuth() &&
-        isMemberOfTenant(resource.data.tenantId);
+      allow get, list: if hasAuth() && isMemberOfTenant(resourceTenantId());
+      allow create: if hasAuth() && isMemberOfTenant(requestTenantId());
+      allow update: if hasAuth() && isMemberOfTenant(resourceTenantId()) &&
+        requestTenantId() == resourceTenantId();
+      allow delete: if hasAuth() && isMemberOfTenant(resourceTenantId());
     }
 
-    // Operations
+    // Opérations (journal)
     match /operations/{docId} {
-      allow read, write: if hasAuth() &&
-        isMemberOfTenant(resource.data.tenantId);
+      allow get, list: if hasAuth() && isMemberOfTenant(resourceTenantId());
+      allow create: if hasAuth() && isMemberOfTenant(requestTenantId());
+      allow update, delete: if false; // immutables
     }
 
-    // Tenants metadata (read-only for members, write by admins to be refined)
+    // Tenants metadata
     match /tenants/{tenantId} {
       allow read: if hasAuth() && isMemberOfTenant(tenantId);
-      allow write: if false; // à préciser plus tard (admin only)
+      allow write: if false; // à restreindre (admin back-office)
     }
 
-    // Memberships (read own memberships)
+    // Memberships: lecture limitée à soi ou à l'admin outillé
     match /memberships/{docId} {
-      allow read: if hasAuth();
-      allow write: if false; // géré côté back-office / scripts
+      allow read: if hasAuth() && docId.startsWith(request.auth.uid + '_');
+      allow write: if false; // géré côté scripts / back-office uniquement
     }
   }
 }

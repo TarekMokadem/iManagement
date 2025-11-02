@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/product.dart';
-import '../../services/product_service.dart';
+import 'package:provider/provider.dart';
+import '../../repositories/products_repository.dart';
+import '../../providers/tenant_provider.dart';
 import '../../widgets/action_button.dart';
 
 class ProductManagementScreen extends StatefulWidget {
@@ -18,7 +20,6 @@ class ProductManagementScreen extends StatefulWidget {
 }
 
 class _ProductManagementScreenState extends State<ProductManagementScreen> {
-  final ProductService _productService = ProductService();
   String _searchQuery = '';
   String _sortBy = 'name';
   bool _sortAscending = true;
@@ -99,7 +100,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Product>>(
-              stream: _productService.getAllProducts(),
+              stream: Provider.of<ProductsRepository>(context, listen: false)
+                  .watchProducts(tenantId: Provider.of<TenantProvider>(context, listen: false).tenantId),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
@@ -269,7 +271,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 criticalThreshold: int.tryParse(thresholdController.text) ?? 0,
                 lastUpdated: DateTime.now(),
               );
-              _productService.addProduct(product);
+              final repo = Provider.of<ProductsRepository>(context, listen: false);
+              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
+              repo.addProduct(product, tenantId: tenantId);
               Navigator.pop(context);
             },
             child: const Text('Ajouter'),
@@ -328,7 +332,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 criticalThreshold: int.tryParse(thresholdController.text) ?? product.criticalThreshold,
                 lastUpdated: DateTime.now(),
               );
-              _productService.updateProduct(updatedProduct.id, updatedProduct);
+              final repo = Provider.of<ProductsRepository>(context, listen: false);
+              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
+              repo.updateProduct(updatedProduct.id, updatedProduct, tenantId: tenantId);
               Navigator.pop(context);
             },
             child: const Text('Modifier'),
@@ -351,7 +357,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           ),
           TextButton(
             onPressed: () {
-              _productService.deleteProduct(product.id);
+              final repo = Provider.of<ProductsRepository>(context, listen: false);
+              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
+              repo.deleteProduct(product.id, tenantId: tenantId);
               Navigator.pop(context);
             },
             child: const Text('Supprimer'),
