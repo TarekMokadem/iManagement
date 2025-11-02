@@ -11,6 +11,8 @@ import 'screens/checkout_success_screen.dart';
 import 'screens/checkout_cancel_screen.dart';
 import 'repositories/products_repository.dart';
 import 'repositories/firestore_products_repository.dart';
+import 'repositories/users_repository.dart';
+import 'repositories/firestore_users_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TenantProvider()),
         // Repositories
         Provider<ProductsRepository>(create: (_) => FirestoreProductsRepository()),
+        Provider<UsersRepository>(create: (_) => FirestoreUsersRepository()),
       ],
       child: MaterialApp(
       title: 'InvV1',

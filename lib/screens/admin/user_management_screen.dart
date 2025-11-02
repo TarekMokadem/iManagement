@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/user.dart';
-import '../../services/user_service.dart';
+import 'package:provider/provider.dart';
+import '../../repositories/users_repository.dart';
+import '../../providers/tenant_provider.dart';
 import '../../widgets/action_button.dart';
 
 class UserManagementScreen extends StatefulWidget {
@@ -18,7 +20,6 @@ class UserManagementScreen extends StatefulWidget {
 }
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
-  final UserService _userService = UserService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _sortBy = 'name';
@@ -104,7 +105,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<AppUser>>(
-              stream: _userService.getAllUsers(),
+              stream: Provider.of<UsersRepository>(context, listen: false)
+                  .watchUsers(tenantId: Provider.of<TenantProvider>(context, listen: false).tenantId),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
@@ -267,7 +269,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               onPressed: () async {
                 if (nameController.text.trim().isEmpty ||
                     codeController.text.trim().isEmpty) {
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Veuillez remplir tous les champs'),
@@ -276,9 +278,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   return;
                 }
 
-                final isCodeAvailable = await _userService.isCodeAvailable(codeController.text.trim());
+                final repo = Provider.of<UsersRepository>(context, listen: false);
+                final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
+                final isCodeAvailable = await repo.isCodeAvailable(codeController.text.trim(), tenantId: tenantId);
                 if (!isCodeAvailable) {
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Ce code est déjà utilisé'),
@@ -295,9 +299,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   tenantId: 'default',
                 );
 
-                await _userService.addUser(newUser);
-                if (!mounted) return;
-                Navigator.pop(context);
+                await repo.addUser(newUser, tenantId: tenantId);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
               },
               child: const Text('Ajouter'),
             ),
@@ -364,10 +369,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   return;
                 }
 
+                final repo = Provider.of<UsersRepository>(context, listen: false);
+                final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
                 if (codeController.text.trim() != user.code) {
-                  final isCodeAvailable = await _userService.isCodeAvailable(codeController.text.trim());
+                  final isCodeAvailable = await repo.isCodeAvailable(codeController.text.trim(), tenantId: tenantId);
                   if (!isCodeAvailable) {
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Ce code est déjà utilisé'),
@@ -383,9 +390,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   isAdmin: isAdmin,
                 );
 
-                await _userService.updateUser(user.id, updatedUser);
-                if (!mounted) return;
-                Navigator.pop(context);
+                await repo.updateUser(user.id, updatedUser, tenantId: tenantId);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
               },
               child: const Text('Modifier'),
             ),
@@ -408,8 +416,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           ),
           TextButton(
             onPressed: () async {
-              await _userService.deleteUser(user.id);
-              Navigator.pop(context);
+              final repo = Provider.of<UsersRepository>(context, listen: false);
+              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
+              await repo.deleteUser(user.id, tenantId: tenantId);
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
             },
             child: const Text('Supprimer'),
           ),
