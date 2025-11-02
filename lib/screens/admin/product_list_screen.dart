@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../services/product_service.dart';
+import 'package:provider/provider.dart';
+import '../../repositories/products_repository.dart';
+import '../../providers/tenant_provider.dart';
 import '../../models/product.dart';
 
 class ProductListScreen extends StatelessWidget {
   final String userId;
   final String userName;
-  late final ProductService _productService;
 
   ProductListScreen({
     Key? key,
     required this.userId,
     required this.userName,
-  }) : _productService = ProductService(),
-       super(key: key);
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final repository = Provider.of<ProductsRepository>(context, listen: false);
+    final tenant = Provider.of<TenantProvider>(context, listen: false);
     return StreamBuilder<List<Product>>(
-      stream: _productService.getAllProducts(),
+      stream: repository.watchProducts(tenantId: tenant.tenantId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Erreur: ${snapshot.error}'));
