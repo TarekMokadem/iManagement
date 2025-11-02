@@ -43,18 +43,28 @@ async function verifyStripeSignature(env: Env, request: Request, payloadText: st
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    } as const;
+
+    // Préflight CORS
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: { ...corsHeaders } });
+    }
 
     // Webhook Stripe: vérifie la signature puis traite l'événement minimalement
     if (request.method === 'POST' && url.pathname === '/stripe/webhook') {
       const payloadText = await request.text();
       const valid = await verifyStripeSignature(env, request, payloadText);
       if (!valid) {
-        return new Response('Invalid signature', { status: 400 });
+        return new Response('Invalid signature', { status: 400, headers: { ...corsHeaders } });
       }
 
       // NOTE: Ici on pourrait parser l'event et mettre à jour Firestore
       // via l'API REST (plans/entitlements). On renvoie 200 pour Stripe.
-      return new Response('ok', { status: 200 });
+      return new Response('ok', { status: 200, headers: { ...corsHeaders } });
     }
 
     // Création d'une session Checkout (abonnement)
@@ -66,7 +76,7 @@ export default {
       const customerId = body.customerId; // optionnel; Stripe créera un customer sinon
 
       if (!priceId || !successUrl || !cancelUrl) {
-        return new Response('Paramètres manquants', { status: 400 });
+        return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
       }
 
       const params = new URLSearchParams({
@@ -88,9 +98,9 @@ export default {
       });
       if (!resp.ok) {
         const txt = await resp.text();
-        return new Response(`Stripe API error: ${txt}`, { status: 500 });
+        return new Response(`Stripe API error: ${txt}`, { status: 500, headers: { ...corsHeaders } });
       }
-      return new Response(await resp.text(), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      return new Response(await resp.text(), { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
 
     // Portail Client: crée une session de portail et renvoie l'URL
@@ -98,7 +108,7 @@ export default {
       const body: any = await request.json().catch(() => ({}));
       const customerId = body.customerId; // requis
       const returnUrl = body.returnUrl;   // recommandé
-      if (!customerId) return new Response('customerId manquant', { status: 400 });
+      if (!customerId) return new Response('customerId manquant', { status: 400, headers: { ...corsHeaders } });
 
       const params = new URLSearchParams({ customer: customerId });
       if (returnUrl) params.set('return_url', returnUrl);
@@ -110,15 +120,16 @@ export default {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: params,
+        
       });
       if (!resp.ok) {
         const txt = await resp.text();
-        return new Response(`Stripe API error: ${txt}`, { status: 500 });
+        return new Response(`Stripe API error: ${txt}`, { status: 500, headers: { ...corsHeaders } });
       }
-      return new Response(await resp.text(), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      return new Response(await resp.text(), { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
 
-    return new Response('Not found', { status: 404 });
+    return new Response('Not found', { status: 404, headers: { ...corsHeaders } });
   },
 };
 
