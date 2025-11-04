@@ -1,0 +1,13 @@
+{
+  "name": "imanagement-backfill-tenantid",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Script de backfill tenantId pour Firestore (products, operations)",
+  "main": "backfill_tenantId.js",
+  "license": "MIT",
+  "dependencies": {
+    "firebase-admin": "^12.5.0"
+  }
+}
+
+
