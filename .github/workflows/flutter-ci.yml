@@ -23,5 +23,7 @@ jobs:
         run: |
           # Non-bloquant: on affiche les différences éventuelles sans échouer le job
           dart format --output=none --set-exit-if-changed . || true
+      - name: Flutter tests
+        run: flutter test -r expanded
 
 
