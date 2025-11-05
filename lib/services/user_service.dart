@@ -64,7 +64,7 @@ class UserService {
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         data['id'] = doc.id;
         return AppUser.fromMap(data);
       }).toList();

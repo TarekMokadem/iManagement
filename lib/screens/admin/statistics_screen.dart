@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../services/product_service.dart';
 import '../../services/operation_service.dart';
 import '../../models/operation.dart';
 
@@ -19,7 +18,6 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  final ProductService _productService = ProductService();
   final OperationService _operationService = OperationService();
   String _selectedPeriod = '7j';
   final List<String> _periods = ['7j', '30j', '90j', '1an'];

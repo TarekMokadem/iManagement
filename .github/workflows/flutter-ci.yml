@@ -17,8 +17,8 @@ jobs:
           channel: 'stable'
       - name: Flutter pub get
         run: flutter pub get
-      - name: Flutter analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Flutter analyze (strict)
+        run: flutter analyze
       - name: Format check
         run: |
           # Non-bloquant: on affiche les différences éventuelles sans échouer le job
