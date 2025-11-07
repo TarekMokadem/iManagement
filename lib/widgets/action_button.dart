@@ -8,13 +8,13 @@ class ActionButton extends StatelessWidget {
   final bool isSecondary;
 
   const ActionButton({
-    Key? key,
+    super.key,
     required this.icon,
     required this.onPressed,
     this.tooltip,
     this.color,
     this.isSecondary = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +42,8 @@ class ActionButton extends StatelessWidget {
                 width: buttonSize,
                 height: buttonSize,
                 decoration: BoxDecoration(
-                  color: color != null 
-                      ? color!.withOpacity(0.1)
-                      : Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: (color ?? Theme.of(context).primaryColor)
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Icon(

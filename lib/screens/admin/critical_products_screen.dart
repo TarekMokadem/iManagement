@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/product.dart';
 import '../../services/product_service.dart';
 import '../../widgets/loading_indicator.dart';
@@ -8,10 +9,10 @@ class CriticalProductsScreen extends StatefulWidget {
   final String userName;
 
   const CriticalProductsScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   State<CriticalProductsScreen> createState() => _CriticalProductsScreenState();
