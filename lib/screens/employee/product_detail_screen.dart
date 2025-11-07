@@ -125,33 +125,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: RadioListTile<OperationType>(
-                      title: const Text('Entrée'),
-                      value: OperationType.entree,
-                      groupValue: _selectedType,
-                      onChanged: (OperationType? value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
-                      },
-                    ),
+              SegmentedButton<OperationType>(
+                segments: const [
+                  ButtonSegment<OperationType>(
+                    value: OperationType.entree,
+                    label: Text('Entrée'),
                   ),
-                  Expanded(
-                    child: RadioListTile<OperationType>(
-                      title: const Text('Sortie'),
-                      value: OperationType.sortie,
-                      groupValue: _selectedType,
-                      onChanged: (OperationType? value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
-                      },
-                    ),
+                  ButtonSegment<OperationType>(
+                    value: OperationType.sortie,
+                    label: Text('Sortie'),
                   ),
                 ],
+                selected: {_selectedType},
+                onSelectionChanged: (selection) {
+                  setState(() {
+                    _selectedType = selection.first;
+                  });
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
