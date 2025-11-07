@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../services/product_service.dart';
+
 import '../../models/product.dart';
+import '../../services/product_service.dart';
 
 class CriticalProductsScreen extends StatelessWidget {
   final String userId;
@@ -8,11 +9,10 @@ class CriticalProductsScreen extends StatelessWidget {
   late final ProductService _productService;
 
   CriticalProductsScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userName,
-  }) : _productService = ProductService(),
-       super(key: key);
+  }) : _productService = ProductService();
 
   @override
   Widget build(BuildContext context) {

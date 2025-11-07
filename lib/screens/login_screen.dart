@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (!mounted) return;
 
-      Navigator.pushReplacementNamed(
+      await Navigator.pushReplacementNamed(
         context,
         user.isAdmin ? '/admin' : '/employee',
         arguments: {

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../../models/operation.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
-import '../../models/operation.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -9,11 +10,11 @@ class ProductDetailScreen extends StatefulWidget {
   final String userName;
 
   const ProductDetailScreen({
-    Key? key,
+    super.key,
     required this.product,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();

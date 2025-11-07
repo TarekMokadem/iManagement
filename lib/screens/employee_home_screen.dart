@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'employee/product_list_screen.dart';
+
 import 'employee/critical_products_screen.dart';
+import 'employee/product_list_screen.dart';
 
 class EmployeeHomeScreen extends StatelessWidget {
   final String userId;
   final String userName;
 
   const EmployeeHomeScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
