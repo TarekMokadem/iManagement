@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/tenant_provider.dart';
 import '../../services/billing_service.dart';
+import '../../services/tenant_service.dart';
 
 class BillingScreen extends StatelessWidget {
   const BillingScreen({super.key});
@@ -11,6 +12,7 @@ class BillingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tenant = context.watch<TenantProvider>();
     final billing = BillingService(workerBaseUrl: 'https://imanagement-stripe.mokadem59200.workers.dev');
+    final tenantService = TenantService();
     const priceId = 'price_1SOlYFBefWQoVTT09yR9vm8Y';
 
     return Scaffold(
@@ -67,12 +69,22 @@ class BillingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  onPressed: () async {
+                  onPressed: tenant.tenantId == null ? null : () async {
                     try {
-                      // TODO: récupérer customerId du tenant lorsque disponible
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Portail client sera activé quand customerId sera disponible')),
+                      final customerId = await tenantService.getStripeCustomerId(tenant.tenantId!);
+                      if (customerId == null) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Aucun customer Stripe associé au tenant')),
+                          );
+                        }
+                        return;
+                      }
+                      final portalUrl = await billing.createPortalSession(
+                        customerId: customerId,
+                        returnUrl: 'https://imanagement.pages.dev/billing',
                       );
+                      await launchUrl(portalUrl, mode: LaunchMode.externalApplication);
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
