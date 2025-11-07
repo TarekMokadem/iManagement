@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../repositories/products_repository.dart';
-import '../../providers/tenant_provider.dart';
+
 import '../../models/product.dart';
+import '../../providers/tenant_provider.dart';
+import '../../repositories/products_repository.dart';
 
 class ProductListScreen extends StatelessWidget {
   final String userId;
   final String userName;
 
-  ProductListScreen({
-    Key? key,
+  const ProductListScreen({
+    super.key,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

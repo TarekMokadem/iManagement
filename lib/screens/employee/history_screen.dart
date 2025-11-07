@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../models/operation.dart';
-import 'package:provider/provider.dart';
-import '../../repositories/operations_repository.dart';
-import '../../providers/tenant_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../../models/operation.dart';
+import '../../providers/tenant_provider.dart';
+import '../../repositories/operations_repository.dart';
 
 class HistoryScreen extends StatelessWidget {
   final String userId;
 
-  HistoryScreen({super.key, required this.userId});
+  const HistoryScreen({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {

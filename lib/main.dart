@@ -1,20 +1,20 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/tenant_provider.dart';
-// import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'firebase_options.dart';
-import 'screens/login_screen.dart';
-import 'screens/employee_home_screen.dart';
-import 'screens/admin/admin_home_screen.dart';
-import 'screens/checkout_success_screen.dart';
-import 'screens/checkout_cancel_screen.dart';
-import 'repositories/products_repository.dart';
+import 'providers/tenant_provider.dart';
+import 'repositories/firestore_operations_repository.dart';
 import 'repositories/firestore_products_repository.dart';
-import 'repositories/users_repository.dart';
 import 'repositories/firestore_users_repository.dart';
 import 'repositories/operations_repository.dart';
-import 'repositories/firestore_operations_repository.dart';
+import 'repositories/products_repository.dart';
+import 'repositories/users_repository.dart';
+import 'screens/admin/admin_home_screen.dart';
+import 'screens/checkout_cancel_screen.dart';
+import 'screens/checkout_success_screen.dart';
+import 'screens/employee_home_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

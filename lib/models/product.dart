@@ -36,7 +36,7 @@ class Product {
       } else if (value is String) {
         return DateTime.parse(value);
       } else {
-        throw FormatException('Format de date invalide');
+        throw const FormatException('Format de date invalide');
       }
     }
 
