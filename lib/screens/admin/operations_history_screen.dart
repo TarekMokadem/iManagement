@@ -272,49 +272,29 @@ class _OperationsHistoryScreenState extends State<OperationsHistoryScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                title: const Text('Toutes les opérations'),
-                leading: Radio<OperationType?>(
-                  value: null,
-                  groupValue: _selectedType,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedType = value;
-                      Navigator.pop(context);
-                    });
-                  },
-                ),
-              ),
-              ListTile(
-                title: const Text('Entrées'),
-                leading: Radio<OperationType?>(
-                  value: OperationType.entree,
-                  groupValue: _selectedType,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedType = value;
-                      Navigator.pop(context);
-                    });
-                  },
-                ),
-              ),
-              ListTile(
-                title: const Text('Sorties'),
-                leading: Radio<OperationType?>(
-                  value: OperationType.sortie,
-                  groupValue: _selectedType,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedType = value;
-                      Navigator.pop(context);
-                    });
-                  },
-                ),
+              SegmentedButton<OperationType>(
+                segments: const [
+                  ButtonSegment<OperationType>(value: OperationType.entree, label: Text('Entrées')),
+                  ButtonSegment<OperationType>(value: OperationType.sortie, label: Text('Sorties')),
+                ],
+                selected: _selectedType == null ? <OperationType>{} : <OperationType>{_selectedType!},
+                onSelectionChanged: (sel) {
+                  setState(() {
+                    _selectedType = sel.isEmpty ? null : sel.first;
+                  });
+                },
+                emptySelectionAllowed: true,
               ),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fermer'),
+            ),
+          ],
         );
       },
     );
   }
-} 
+}
