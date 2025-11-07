@@ -362,8 +362,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               repo.deleteProduct(product.id, tenantId: tenantId);
               Navigator.pop(context);
             },
-            child: const Text('Supprimer'),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Supprimer'),
           ),
         ],
       ),

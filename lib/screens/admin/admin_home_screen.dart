@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../widgets/action_button.dart';
-import 'critical_products_screen.dart';
-import 'product_management_screen.dart';
-import 'user_management_screen.dart';
-import 'operations_history_screen.dart';
-import 'statistics_screen.dart';
 import 'billing_screen.dart';
+import 'critical_products_screen.dart';
+import 'operations_history_screen.dart';
+import 'product_management_screen.dart';
+import 'statistics_screen.dart';
+import 'user_management_screen.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   final String userId;
   final String userName;
 
   const AdminHomeScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class AdminHomeScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(16.0),
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
               child: Column(
                 children: [
                   Text(
@@ -222,8 +222,8 @@ class AdminHomeScreen extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(8.0),
-          splashColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          highlightColor: Theme.of(context).primaryColor.withOpacity(0.2),
+          splashColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+          highlightColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             height: cardHeight,
