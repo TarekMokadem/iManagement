@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../services/operation_service.dart';
+import 'package:provider/provider.dart';
+
 import '../../models/operation.dart';
+import '../../providers/tenant_provider.dart';
+import '../../repositories/operations_repository.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final String userId;
@@ -18,7 +21,6 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  final OperationService _operationService = OperationService();
   String _selectedPeriod = '7j';
   final List<String> _periods = ['7j', '30j', '90j', '1an'];
 
@@ -151,7 +153,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             SizedBox(
               height: 400,
               child: StreamBuilder<List<Operation>>(
-                stream: _operationService.getAllOperations(),
+                stream: Provider.of<OperationsRepository>(context, listen: false)
+                    .watchAll(
+                  tenantId: Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default',
+                ),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(child: Text('Erreur: ${snapshot.error}'));
@@ -373,7 +378,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
             const SizedBox(height: 16),
             StreamBuilder<List<Operation>>(
-              stream: _operationService.getAllOperations(),
+              stream: Provider.of<OperationsRepository>(context, listen: false)
+                  .watchAll(
+                tenantId: Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default',
+              ),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text('Erreur: ${snapshot.error}'));
