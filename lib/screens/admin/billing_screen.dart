@@ -71,15 +71,20 @@ class _BillingScreenState extends State<BillingScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _isCreatingCheckout
+                  onPressed: tenant.tenantId == null || _isCreatingCheckout
                       ? null
                       : () async {
                           setState(() => _isCreatingCheckout = true);
                     try {
+                      final tenantId = tenant.tenantId!;
+                      final existingCustomerId =
+                          await tenantService.getStripeCustomerId(tenantId);
                       final checkoutUrl = await billing.createCheckoutSession(
                         priceId: priceId,
                         successUrl: 'https://imanagement.pages.dev/success',
                         cancelUrl: 'https://imanagement.pages.dev/cancel',
+                        tenantId: tenantId,
+                        customerId: existingCustomerId,
                       );
                       await launchUrl(checkoutUrl, webOnlyWindowName: '_self');
                     } catch (e) {

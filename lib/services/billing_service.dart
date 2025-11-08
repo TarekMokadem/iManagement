@@ -11,6 +11,7 @@ class BillingService {
     required String priceId,
     required String successUrl,
     required String cancelUrl,
+    required String tenantId,
     String? customerId,
   }) async {
     final url = Uri.parse('$workerBaseUrl/checkout/session');
@@ -21,6 +22,7 @@ class BillingService {
         'priceId': priceId,
         'successUrl': successUrl,
         'cancelUrl': cancelUrl,
+        'tenantId': tenantId,
         if (customerId != null) 'customerId': customerId,
       }),
     );
