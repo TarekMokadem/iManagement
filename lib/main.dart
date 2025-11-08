@@ -4,17 +4,18 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'providers/tenant_provider.dart';
+import 'providers/session_provider.dart';
 import 'repositories/firestore_operations_repository.dart';
 import 'repositories/firestore_products_repository.dart';
 import 'repositories/firestore_users_repository.dart';
 import 'repositories/operations_repository.dart';
 import 'repositories/products_repository.dart';
 import 'repositories/users_repository.dart';
-import 'screens/admin/admin_home_screen.dart';
 import 'screens/checkout_cancel_screen.dart';
 import 'screens/checkout_success_screen.dart';
-import 'screens/employee_home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/root_screen.dart';
+import 'widgets/guards.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TenantProvider()),
+        ChangeNotifierProvider(create: (_) => SessionProvider()),
         // Repositories
         Provider<ProductsRepository>(create: (_) => FirestoreProductsRepository()),
         Provider<UsersRepository>(create: (_) => FirestoreUsersRepository()),
@@ -43,33 +45,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // localizationsDelegates: const [
-      //   GlobalMaterialLocalizations.delegate,
-      //   GlobalWidgetsLocalizations.delegate,
-      //   GlobalCupertinoLocalizations.delegate,
-      // ],
-      // supportedLocales: const [
-      //   Locale('fr', ''),
-      // ],
-      initialRoute: '/login',
+      initialRoute: '/',
       routes: {
+        '/': (context) => const RootScreen(),
         '/login': (context) => const LoginScreen(),
         '/success': (context) => const CheckoutSuccessScreen(),
         '/cancel': (context) => const CheckoutCancelScreen(),
-        '/employee': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-          return EmployeeHomeScreen(
-            userId: args['userId']!,
-            userName: args['userName']!,
-          );
-        },
-        '/admin': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-          return AdminHomeScreen(
-            userId: args['userId']!,
-            userName: args['userName']!,
-          );
-        },
+        '/employee': (context) => const EmployeeGuard(),
+        '/admin': (context) => const AdminGuard(),
       },
       ),
     );

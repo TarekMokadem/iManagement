@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../providers/tenant_provider.dart';
+import '../providers/session_provider.dart';
+import '../services/session_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -47,14 +49,20 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (!mounted) return;
 
-      await Navigator.pushReplacementNamed(
-        context,
-        user.isAdmin ? '/admin' : '/employee',
-        arguments: {
-          'userId': user.id,
-          'userName': user.name,
-        },
+      // Créer une session (TTL 2h)
+      final session = SessionData(
+        userId: user.id,
+        userName: user.name,
+        tenantId: user.tenantId,
+        isAdmin: user.isAdmin,
+        expiresAt: DateTime.now().add(const Duration(hours: 2)),
       );
+      if (mounted) {
+        await context.read<SessionProvider>().login(session);
+      }
+
+      if (!mounted) return;
+      await Navigator.pushReplacementNamed(context, user.isAdmin ? '/admin' : '/employee');
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
