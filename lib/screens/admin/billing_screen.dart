@@ -81,7 +81,7 @@ class _BillingScreenState extends State<BillingScreen> {
                         successUrl: 'https://imanagement.pages.dev/success',
                         cancelUrl: 'https://imanagement.pages.dev/cancel',
                       );
-                      await launchUrl(checkoutUrl, mode: LaunchMode.externalApplication);
+                      await launchUrl(checkoutUrl, webOnlyWindowName: '_self');
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -117,7 +117,7 @@ class _BillingScreenState extends State<BillingScreen> {
                         customerId: customerId,
                         returnUrl: 'https://imanagement.pages.dev/billing',
                       );
-                      await launchUrl(portalUrl, mode: LaunchMode.externalApplication);
+                      await launchUrl(portalUrl, webOnlyWindowName: '_self');
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
