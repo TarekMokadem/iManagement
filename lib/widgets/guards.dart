@@ -16,6 +16,7 @@ class AdminGuard extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (!session.isAuthenticated) {
+      context.read<TenantProvider>().clearTenant();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           if (ModalRoute.of(context)?.settings.name != '/login') {
@@ -51,6 +52,7 @@ class EmployeeGuard extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (!session.isAuthenticated) {
+      context.read<TenantProvider>().clearTenant();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           if (ModalRoute.of(context)?.settings.name != '/login') {

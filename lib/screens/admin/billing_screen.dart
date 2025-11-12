@@ -59,9 +59,13 @@ class _BillingScreenState extends State<BillingScreen> {
                   children: [
                     const Text('Avantages inclus'),
                     const SizedBox(height: 8),
-                    Text(tenant.entitlements.isEmpty
-                        ? 'Aucun entitlement chargé (bientôt)'
-                        : tenant.entitlements.entries.map((e) => '- ${e.key}: ${e.value}').join('\n')),
+                    Text(
+                      tenant.entitlements.isEmpty
+                          ? (tenant.tenantId == null
+                              ? 'Aucun tenant sélectionné'
+                              : 'Chargement des entitlements...')
+                          : tenant.entitlements.entries.map((e) => '- ${e.key}: ${e.value}').join('\n'),
+                    ),
                   ],
                 ),
               ),
@@ -77,7 +81,7 @@ class _BillingScreenState extends State<BillingScreen> {
                           setState(() => _isCreatingCheckout = true);
                     try {
                       final tenantId = tenant.tenantId!;
-                      final existingCustomerId =
+                      final existingCustomerId = tenant.stripeCustomerId ??
                           await tenantService.getStripeCustomerId(tenantId);
                       final checkoutUrl = await billing.createCheckoutSession(
                         priceId: priceId,
@@ -109,7 +113,8 @@ class _BillingScreenState extends State<BillingScreen> {
                       : () async {
                           setState(() => _isOpeningPortal = true);
                     try {
-                      final customerId = await tenantService.getStripeCustomerId(tenant.tenantId!);
+                      final customerId = tenant.stripeCustomerId ??
+                          await tenantService.getStripeCustomerId(tenant.tenantId!);
                       if (customerId == null) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

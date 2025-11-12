@@ -12,6 +12,13 @@ class TenantService {
     if (!doc.exists) return null;
     return doc.data()?['stripeCustomerId'] as String?;
   }
+
+  Stream<Map<String, dynamic>?> watchTenant(String tenantId) {
+    if (tenantId.isEmpty) {
+      return const Stream<Map<String, dynamic>?>.empty();
+    }
+    return _firestore.collection('tenants').doc(tenantId).snapshots().map((doc) => doc.data());
+  }
 }
 
 

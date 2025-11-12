@@ -16,13 +16,15 @@ class _RootScreenState extends State<RootScreen> {
 
   void _handleNavigation(SessionProvider session) {
     if (_navigated || session.isLoading) return;
-    final targetRoute = session.isAuthenticated
-        ? (session.isAdmin ? '/admin' : '/employee')
-        : '/login';
+    final isAuthenticated = session.isAuthenticated;
+    final targetRoute =
+        isAuthenticated ? (session.isAdmin ? '/admin' : '/employee') : '/login';
 
-    if (session.isAuthenticated) {
+    if (isAuthenticated) {
       final tenantId = session.session!.tenantId;
       context.read<TenantProvider>().setTenant(tenantId: tenantId);
+    } else {
+      context.read<TenantProvider>().clearTenant();
     }
 
     _navigated = true;
