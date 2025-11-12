@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/session_provider.dart';
+import '../providers/tenant_provider.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -13,27 +14,28 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   bool _navigated = false;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_navigated) return;
+  void _handleNavigation(SessionProvider session) {
+    if (_navigated || session.isLoading) return;
+    final targetRoute = session.isAuthenticated
+        ? (session.isAdmin ? '/admin' : '/employee')
+        : '/login';
+
+    if (session.isAuthenticated) {
+      final tenantId = session.session!.tenantId;
+      context.read<TenantProvider>().setTenant(tenantId: tenantId);
+    }
+
     _navigated = true;
-    final session = context.read<SessionProvider>();
-    Future.microtask(() async {
-      await session.load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!session.isAuthenticated) {
-        Navigator.pushReplacementNamed(context, '/login');
-      } else if (session.isAdmin) {
-        Navigator.pushReplacementNamed(context, '/admin');
-      } else {
-        Navigator.pushReplacementNamed(context, '/employee');
-      }
+      Navigator.pushReplacementNamed(context, targetRoute);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final session = context.watch<SessionProvider>();
+    _handleNavigation(session);
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

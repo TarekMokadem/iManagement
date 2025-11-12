@@ -79,6 +79,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final session = context.watch<SessionProvider>();
+    if (session.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (session.isAuthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final tenantId = session.session!.tenantId;
+        context.read<TenantProvider>().setTenant(tenantId: tenantId);
+        final target = session.isAdmin ? '/admin' : '/employee';
+        if (ModalRoute.of(context)?.settings.name != target) {
+          await Navigator.pushReplacementNamed(context, target);
+        }
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(

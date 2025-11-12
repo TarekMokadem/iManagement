@@ -202,21 +202,41 @@ async function updateTenantDocument(env: Env, tenantId: string, data: Record<str
   if (!filteredEntries.length) return;
 
   const token = await getAccessToken(env);
-  const url = new URL(
-    `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/tenants/${tenantId}`
-  );
+  const documentPath = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/tenants/${tenantId}`;
+  const url = new URL(documentPath);
+  const payloadFields = encodeFirestoreFields(Object.fromEntries(filteredEntries));
   for (const [key, value] of filteredEntries) {
     if (value === undefined) continue;
     url.searchParams.append('updateMask.fieldPaths', key);
   }
-  const response = await fetch(url.toString(), {
+  let response = await fetch(url.toString(), {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ fields: encodeFirestoreFields(Object.fromEntries(filteredEntries)) }),
+    body: JSON.stringify({ fields: payloadFields }),
   });
+
+  if (response.status === 404) {
+    // Le document n'existe pas encore : on le crée.
+    response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/tenants?documentId=${tenantId}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fields: payloadFields }),
+      }
+    );
+    if (response.ok) {
+      console.log(`Document tenant créé: ${tenantId}`);
+      return;
+    }
+  }
+
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Échec mise à jour tenant ${tenantId}: ${response.status} ${text}`);
