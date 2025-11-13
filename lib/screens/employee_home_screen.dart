@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
+import '../providers/tenant_provider.dart';
 import 'employee/critical_products_screen.dart';
 import 'employee/product_list_screen.dart';
 
@@ -29,8 +31,17 @@ class EmployeeHomeScreen extends StatelessWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.logout),
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, '/login');
+              onPressed: () async {
+                final sessionProvider = context.read<SessionProvider>();
+                final tenantProvider = context.read<TenantProvider>();
+                final navigator = Navigator.of(context);
+                
+                await sessionProvider.logout();
+                tenantProvider.clearTenant();
+                
+                if (context.mounted) {
+                  navigator.pushReplacementNamed('/login');
+                }
               },
             ),
           ],

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/session_provider.dart';
+import '../../providers/tenant_provider.dart';
 import '../../widgets/action_button.dart';
 import 'billing_screen.dart';
 import 'critical_products_screen.dart';
@@ -25,9 +28,17 @@ class AdminHomeScreen extends StatelessWidget {
         actions: [
           ActionButton(
             icon: Icons.logout,
-            onPressed: () {
-              // TODO: Implémenter la déconnexion
-              Navigator.of(context).pushReplacementNamed('/login');
+            onPressed: () async {
+              final sessionProvider = context.read<SessionProvider>();
+              final tenantProvider = context.read<TenantProvider>();
+              final navigator = Navigator.of(context);
+              
+              await sessionProvider.logout();
+              tenantProvider.clearTenant();
+              
+              if (context.mounted) {
+                navigator.pushReplacementNamed('/login');
+              }
             },
             tooltip: 'Déconnexion',
           ),
