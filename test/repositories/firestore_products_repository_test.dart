@@ -1,10 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:app_invv1/models/product.dart';
 import 'package:app_invv1/repositories/firestore_products_repository.dart';
 import 'package:app_invv1/repositories/products_repository.dart';
-import 'package:app_invv1/models/product.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('FirestoreProductsRepository', () {
@@ -83,6 +82,39 @@ void main() {
       final after = await fake.collection('products').doc(doc.id).get();
       expect(after.data()!['name'], 'New');
       expect(after.data()!['tenantId'], 't1');
+    });
+
+    test('countProducts retourne le nombre de produits pour un tenant', () async {
+      await fake.collection('products').add({
+        'name': 'P1',
+        'location': 'A',
+        'quantity': 1,
+        'criticalThreshold': 1,
+        'lastUpdated': Timestamp.fromDate(DateTime.now()),
+        'tenantId': 't1',
+      });
+      await fake.collection('products').add({
+        'name': 'P2',
+        'location': 'B',
+        'quantity': 2,
+        'criticalThreshold': 1,
+        'lastUpdated': Timestamp.fromDate(DateTime.now()),
+        'tenantId': 't1',
+      });
+      await fake.collection('products').add({
+        'name': 'P3',
+        'location': 'C',
+        'quantity': 3,
+        'criticalThreshold': 1,
+        'lastUpdated': Timestamp.fromDate(DateTime.now()),
+        'tenantId': 't2',
+      });
+
+      final countT1 = await repo.countProducts(tenantId: 't1');
+      final countT2 = await repo.countProducts(tenantId: 't2');
+
+      expect(countT1, 2);
+      expect(countT2, 1);
     });
   });
 }

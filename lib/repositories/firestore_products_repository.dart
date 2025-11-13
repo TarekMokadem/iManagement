@@ -25,6 +25,16 @@ class FirestoreProductsRepository implements ProductsRepository {
   }
 
   @override
+  Future<int> countProducts({required String tenantId}) async {
+    Query<Map<String, dynamic>> query = _firestore.collection(_collection);
+    if (tenantId.isNotEmpty) {
+      query = query.where('tenantId', isEqualTo: tenantId);
+    }
+    final snapshot = await query.get();
+    return snapshot.docs.length;
+  }
+
+  @override
   Future<void> addProduct(Product product, {required String tenantId}) async {
     final data = product.toMap();
     data['tenantId'] = tenantId;

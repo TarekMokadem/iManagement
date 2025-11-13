@@ -21,6 +21,22 @@ class TenantProvider with ChangeNotifier {
   Map<String, dynamic> get entitlements => _entitlements;
   String? get stripeCustomerId => _stripeCustomerId;
 
+  int? get maxUsers => _intFromEntitlement('maxUsers');
+  int? get maxProducts => _intFromEntitlement('maxProducts');
+  int? get maxOperationsPerMonth => _intFromEntitlement('maxOperationsPerMonth');
+
+  int? _intFromEntitlement(String key) {
+    final value = _entitlements[key];
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
   void setTenant({required String tenantId}) {
     if (tenantId.isEmpty) {
       clearTenant();

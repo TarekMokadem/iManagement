@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/operation.dart';
 import '../../models/product.dart';
+import '../../providers/tenant_provider.dart';
 import '../../services/product_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -57,11 +59,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       }
 
       // Mettre à jour la quantité (l'opération sera créée dans ProductService)
+      final tenantId = context.read<TenantProvider>().tenantId;
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('Tenant introuvable pour cette session');
+      }
+
       await _productService.updateQuantity(
         widget.product,
         newQuantity,
         widget.userId,
         widget.userName,
+        tenantId,
       );
 
       if (mounted) {

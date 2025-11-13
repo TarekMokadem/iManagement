@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/product.dart';
 import 'package:provider/provider.dart';
-import '../../repositories/products_repository.dart';
+
+import '../../models/product.dart';
 import '../../providers/tenant_provider.dart';
+import '../../repositories/products_repository.dart';
 import '../../widgets/action_button.dart';
 
 class ProductManagementScreen extends StatefulWidget {
@@ -10,10 +11,10 @@ class ProductManagementScreen extends StatefulWidget {
   final String userName;
 
   const ProductManagementScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   State<ProductManagementScreen> createState() => _ProductManagementScreenState();
@@ -262,7 +263,33 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             child: const Text('Annuler'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              final productsRepo = Provider.of<ProductsRepository>(context, listen: false);
+              final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+              final tenantId = tenantProvider.tenantId;
+              if (tenantId == null || tenantId.isEmpty) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Tenant introuvable. Veuillez vous reconnecter.')),
+                );
+                return;
+              }
+
+              final maxProducts = tenantProvider.maxProducts;
+              if (maxProducts != null) {
+                final currentCount = await productsRepo.countProducts(tenantId: tenantId);
+                if (currentCount >= maxProducts) {
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Quota de produits atteint pour votre abonnement. Passez au plan supérieur pour ajouter davantage de produits.'),
+                    ),
+                  );
+                  return;
+                }
+              }
+
               final product = Product(
                 id: '',
                 name: nameController.text.trim(),
@@ -271,10 +298,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 criticalThreshold: int.tryParse(thresholdController.text) ?? 0,
                 lastUpdated: DateTime.now(),
               );
-              final repo = Provider.of<ProductsRepository>(context, listen: false);
-              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
-              repo.addProduct(product, tenantId: tenantId);
-              Navigator.pop(context);
+              await productsRepo.addProduct(product, tenantId: tenantId);
+              navigator.pop();
+              messenger.showSnackBar(
+                SnackBar(content: Text('${product.name} ajouté avec succès')),
+              );
             },
             child: const Text('Ajouter'),
           ),
@@ -324,7 +352,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             child: const Text('Annuler'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
               final updatedProduct = product.copyWith(
                 name: nameController.text.trim(),
                 location: locationController.text.trim(),
@@ -333,9 +363,19 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 lastUpdated: DateTime.now(),
               );
               final repo = Provider.of<ProductsRepository>(context, listen: false);
-              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
-              repo.updateProduct(updatedProduct.id, updatedProduct, tenantId: tenantId);
-              Navigator.pop(context);
+              final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+              final tenantId = tenantProvider.tenantId;
+              if (tenantId == null || tenantId.isEmpty) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Tenant introuvable. Veuillez vous reconnecter.')),
+                );
+                return;
+              }
+              await repo.updateProduct(updatedProduct.id, updatedProduct, tenantId: tenantId);
+              navigator.pop();
+              messenger.showSnackBar(
+                SnackBar(content: Text('${updatedProduct.name} mis à jour')),
+              );
             },
             child: const Text('Modifier'),
           ),
@@ -356,11 +396,23 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             child: const Text('Annuler'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
               final repo = Provider.of<ProductsRepository>(context, listen: false);
-              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
-              repo.deleteProduct(product.id, tenantId: tenantId);
-              Navigator.pop(context);
+              final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+              final tenantId = tenantProvider.tenantId;
+              if (tenantId == null || tenantId.isEmpty) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Tenant introuvable. Veuillez vous reconnecter.')),
+                );
+                return;
+              }
+              await repo.deleteProduct(product.id, tenantId: tenantId);
+              navigator.pop();
+              messenger.showSnackBar(
+                SnackBar(content: Text('${product.name} supprimé')),
+              );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Supprimer'),

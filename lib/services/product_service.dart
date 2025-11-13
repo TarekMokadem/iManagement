@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/product.dart';
+
 import '../models/operation.dart';
+import '../models/product.dart';
 
 class ProductService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -50,6 +51,7 @@ class ProductService {
     int newQuantity,
     String userId,
     String userName,
+    String tenantId,
   ) async {
     final oldQuantity = product.quantity;
     final difference = newQuantity - oldQuantity;
@@ -63,6 +65,7 @@ class ProductService {
     // Créer une opération avec un ID unique
     final operation = Operation(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      tenantId: tenantId,
       productId: product.id,
       productName: product.name,
       userId: userId,

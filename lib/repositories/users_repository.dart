@@ -2,6 +2,7 @@ import '../models/user.dart';
 
 abstract class UsersRepository {
   Stream<List<AppUser>> watchUsers({String? tenantId});
+  Future<int> countUsers({required String tenantId});
   Future<void> addUser(AppUser user, {required String tenantId});
   Future<void> updateUser(String userId, AppUser user, {required String tenantId});
   Future<void> deleteUser(String userId, {required String tenantId});

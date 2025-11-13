@@ -35,7 +35,7 @@ class AdminHomeScreen extends StatelessWidget {
               final navigator = Navigator.of(context);
               await session.logout();
               tenant.clearTenant();
-              navigator.pushNamedAndRemoveUntil('/login', (route) => false);
+              await navigator.pushNamedAndRemoveUntil('/login', (route) => false);
             },
             tooltip: 'Déconnexion',
           ),

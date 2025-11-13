@@ -10,6 +10,7 @@ enum OperationType {
 
 class Operation {
   final String id;
+  final String tenantId;
   final String productId;
   final String productName;
   final OperationType type;
@@ -20,6 +21,7 @@ class Operation {
 
   Operation({
     required this.id,
+    required this.tenantId,
     required this.productId,
     required this.productName,
     required this.type,
@@ -34,6 +36,7 @@ class Operation {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'tenantId': tenantId,
       'productId': productId,
       'productName': productName,
       'type': type.toString().split('.').last,
@@ -47,6 +50,7 @@ class Operation {
   factory Operation.fromMap(Map<String, dynamic> map) {
     return Operation(
       id: map['id'] as String,
+      tenantId: (map['tenantId'] as String?) ?? '',
       productId: map['productId'] as String,
       productName: map['productName'] as String,
       type: OperationType.values.firstWhere(
@@ -61,6 +65,7 @@ class Operation {
 
   Operation copyWith({
     String? id,
+    String? tenantId,
     String? productId,
     String? productName,
     OperationType? type,
@@ -71,6 +76,7 @@ class Operation {
   }) {
     return Operation(
       id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
       productId: productId ?? this.productId,
       productName: productName ?? this.productName,
       type: type ?? this.type,

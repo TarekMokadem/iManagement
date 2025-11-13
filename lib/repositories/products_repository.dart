@@ -5,6 +5,7 @@ abstract class ProductsRepository {
   /// the repository may return all products (legacy behavior).
   Stream<List<Product>> watchProducts({String? tenantId});
 
+  Future<int> countProducts({required String tenantId});
   Future<void> addProduct(Product product, {required String tenantId});
   Future<void> updateProduct(String id, Product product, {required String tenantId});
   Future<void> deleteProduct(String id, {required String tenantId});

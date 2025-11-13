@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/user.dart';
 import 'package:provider/provider.dart';
-import '../../repositories/users_repository.dart';
+
+import '../../models/user.dart';
 import '../../providers/tenant_provider.dart';
+import '../../repositories/users_repository.dart';
 import '../../widgets/action_button.dart';
 
 class UserManagementScreen extends StatefulWidget {
@@ -10,10 +11,10 @@ class UserManagementScreen extends StatefulWidget {
   final String userName;
 
   const UserManagementScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   State<UserManagementScreen> createState() => _UserManagementScreenState();
@@ -267,10 +268,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ),
             TextButton(
               onPressed: () async {
-                if (nameController.text.trim().isEmpty ||
-                    codeController.text.trim().isEmpty) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
+                final trimmedName = nameController.text.trim();
+                final trimmedCode = codeController.text.trim();
+
+                if (trimmedName.isEmpty || trimmedCode.isEmpty) {
+                  messenger.showSnackBar(
                     const SnackBar(
                       content: Text('Veuillez remplir tous les champs'),
                     ),
@@ -279,11 +283,32 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 }
 
                 final repo = Provider.of<UsersRepository>(context, listen: false);
-                final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
-                final isCodeAvailable = await repo.isCodeAvailable(codeController.text.trim(), tenantId: tenantId);
+                final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+                final tenantId = tenantProvider.tenantId;
+                if (tenantId == null || tenantId.isEmpty) {
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Tenant introuvable. Veuillez vous reconnecter.')),
+                  );
+                  return;
+                }
+
+                final maxUsers = tenantProvider.maxUsers;
+                if (maxUsers != null) {
+                  final currentUsers = await repo.countUsers(tenantId: tenantId);
+                  if (currentUsers >= maxUsers) {
+                    navigator.pop();
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Quota d’utilisateurs atteint. Passez au plan supérieur pour inviter davantage de membres.'),
+                      ),
+                    );
+                    return;
+                  }
+                }
+
+                final isCodeAvailable = await repo.isCodeAvailable(trimmedCode, tenantId: tenantId);
                 if (!isCodeAvailable) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(
                       content: Text('Ce code est déjà utilisé'),
                     ),
@@ -293,16 +318,17 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
                 final newUser = AppUser(
                   id: '',
-                  name: nameController.text.trim(),
-                  code: codeController.text.trim(),
+                  name: trimmedName,
+                  code: trimmedCode,
                   isAdmin: isAdmin,
-                  tenantId: 'default',
+                  tenantId: tenantId,
                 );
 
                 await repo.addUser(newUser, tenantId: tenantId);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text('${newUser.name} ajouté avec succès')),
+                );
               },
               child: const Text('Ajouter'),
             ),
@@ -359,9 +385,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ),
             TextButton(
               onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
                 if (nameController.text.trim().isEmpty ||
                     codeController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(
                       content: Text('Veuillez remplir tous les champs'),
                     ),
@@ -370,12 +397,19 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 }
 
                 final repo = Provider.of<UsersRepository>(context, listen: false);
-                final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
+                final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+                final tenantId = tenantProvider.tenantId;
+                if (tenantId == null || tenantId.isEmpty) {
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Tenant introuvable. Veuillez vous reconnecter.')),
+                  );
+                  return;
+                }
+
                 if (codeController.text.trim() != user.code) {
                   final isCodeAvailable = await repo.isCodeAvailable(codeController.text.trim(), tenantId: tenantId);
                   if (!isCodeAvailable) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       const SnackBar(
                         content: Text('Ce code est déjà utilisé'),
                       ),
@@ -388,11 +422,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   name: nameController.text.trim(),
                   code: codeController.text.trim(),
                   isAdmin: isAdmin,
+                  tenantId: tenantId,
                 );
 
                 await repo.updateUser(user.id, updatedUser, tenantId: tenantId);
                 if (context.mounted) {
                   Navigator.pop(context);
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('${updatedUser.name} mis à jour')),
+                  );
                 }
               },
               child: const Text('Modifier'),
@@ -417,10 +455,20 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           TextButton(
             onPressed: () async {
               final repo = Provider.of<UsersRepository>(context, listen: false);
-              final tenantId = Provider.of<TenantProvider>(context, listen: false).tenantId ?? 'default';
+              final tenantProvider = Provider.of<TenantProvider>(context, listen: false);
+              final tenantId = tenantProvider.tenantId;
+              if (tenantId == null || tenantId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Tenant introuvable. Veuillez vous reconnecter.')),
+                );
+                return;
+              }
               await repo.deleteUser(user.id, tenantId: tenantId);
               if (context.mounted) {
                 Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${user.name} supprimé')),
+                );
               }
             },
             child: const Text('Supprimer'),
