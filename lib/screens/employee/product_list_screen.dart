@@ -22,7 +22,6 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  late final ProductService productService;
   String _searchQuery = '';
   String _sortBy = 'location';
   bool _sortAscending = true;
@@ -30,7 +29,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     final tenantId = context.watch<TenantProvider>().tenantId;
-    productService = ProductService(tenantId: tenantId);
+    final productService = ProductService(tenantId: tenantId);
 
     return Scaffold(
       appBar: AppBar(
