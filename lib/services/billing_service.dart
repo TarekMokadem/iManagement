@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/billing_invoice.dart';
+
 class BillingService {
   final String workerBaseUrl;
 
@@ -59,6 +61,33 @@ class BillingService {
       return Uri.parse(urlString);
     }
     throw Exception('Erreur création session Portal: ${resp.statusCode} ${resp.body}');
+  }
+
+  Future<List<BillingInvoice>> fetchInvoices({
+    required String customerId,
+    int limit = 10,
+    String? startingAfter,
+  }) async {
+    final url = Uri.parse('$workerBaseUrl/billing/invoices');
+    final resp = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'customerId': customerId,
+        'limit': limit,
+        if (startingAfter != null) 'startingAfter': startingAfter,
+      }),
+    );
+
+    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final invoices = (data['data'] as List<dynamic>? ?? [])
+          .map((invoice) => BillingInvoice.fromJson(invoice as Map<String, dynamic>))
+          .toList();
+      return invoices;
+    }
+
+    throw Exception('Erreur récupération factures: ${resp.statusCode} ${resp.body}');
   }
 }
 

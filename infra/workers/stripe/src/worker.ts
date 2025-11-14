@@ -654,6 +654,40 @@ export default {
       });
     }
 
+    if (request.method === 'POST' && url.pathname === '/billing/invoices') {
+      const body: any = await request.json().catch(() => ({}));
+      const customerId = body.customerId as string | undefined;
+      const limitRaw = Number(body.limit ?? 10);
+      const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(Math.trunc(limitRaw), 1), 20) : 10;
+      const startingAfter = typeof body.startingAfter === 'string' ? body.startingAfter : undefined;
+      const endingBefore = typeof body.endingBefore === 'string' ? body.endingBefore : undefined;
+
+      if (!customerId) {
+        return new Response('customerId manquant', { status: 400, headers: { ...corsHeaders } });
+      }
+
+      const params = new URLSearchParams({ customer: customerId, limit: String(limit) });
+      if (startingAfter) params.set('starting_after', startingAfter);
+      if (endingBefore) params.set('ending_before', endingBefore);
+
+      const response = await fetch(`https://api.stripe.com/v1/invoices?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        return new Response(`Stripe API error: ${text}`, { status: response.status, headers: { ...corsHeaders } });
+      }
+
+      return new Response(await response.text(), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
     return new Response('Not found', { status: 404, headers: { ...corsHeaders } });
   },
 };

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/billing_invoice.dart';
 import '../../providers/tenant_provider.dart';
 import '../../services/billing_service.dart';
 import '../../services/tenant_service.dart';
@@ -15,20 +16,41 @@ class BillingScreen extends StatefulWidget {
 }
 
 class _BillingScreenState extends State<BillingScreen> {
+  static const _workerBaseUrl = 'https://imanagement-stripe.mokadem59200.workers.dev';
+
   bool _isCreatingCheckout = false;
   bool _isOpeningPortal = false;
+  Future<List<BillingInvoice>>? _invoicesFuture;
+  String? _invoicesCustomerId;
+
+  late final BillingService _billingService;
+  late final TenantService _tenantService;
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('fr_FR');
+    _billingService = BillingService(workerBaseUrl: _workerBaseUrl);
+    _tenantService = TenantService();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tenant = Provider.of<TenantProvider>(context);
+    final customerId = tenant.stripeCustomerId;
+    if (customerId != null && customerId != _invoicesCustomerId) {
+      _invoicesCustomerId = customerId;
+      _invoicesFuture = _billingService.fetchInvoices(customerId: customerId);
+    } else if (customerId == null && _invoicesCustomerId != null) {
+      _invoicesCustomerId = null;
+      _invoicesFuture = null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final tenant = context.watch<TenantProvider>();
-    final billing = BillingService(workerBaseUrl: 'https://imanagement-stripe.mokadem59200.workers.dev');
-    final tenantService = TenantService();
     const priceId = 'price_1SOlYFBefWQoVTT09yR9vm8Y';
 
     return Scaffold(
@@ -163,6 +185,74 @@ class _BillingScreenState extends State<BillingScreen> {
               ],
             ),
             const SizedBox(height: 24),
+
+            if (_invoicesFuture != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Historique des factures', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  FutureBuilder<List<BillingInvoice>>(
+                    future: _invoicesFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text('Erreur lors du chargement des factures: ${snapshot.error}'),
+                        );
+                      }
+                      final invoices = snapshot.data ?? [];
+                      if (invoices.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text('Aucune facture émise pour le moment.'),
+                        );
+                      }
+
+                      return Column(
+                        children: invoices.map((invoice) {
+                          final amount = _formatAmount(invoice.amountDue, invoice.currency);
+                          final issuedOn = _formatDate(invoice.createdAt);
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              title: Text(invoice.number ?? invoice.id),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Status: ${invoice.status}'),
+                                  if (issuedOn != null) Text('Émise le $issuedOn'),
+                                ],
+                              ),
+                              trailing: Text(
+                                amount,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              onTap: invoice.hostedInvoiceUrl != null
+                                  ? () async {
+                                      await launchUrl(Uri.parse(invoice.hostedInvoiceUrl!), webOnlyWindowName: '_blank');
+                                    }
+                                  : (invoice.invoicePdfUrl != null
+                                      ? () async {
+                                          await launchUrl(Uri.parse(invoice.invoicePdfUrl!), webOnlyWindowName: '_blank');
+                                        }
+                                      : null),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -175,8 +265,8 @@ class _BillingScreenState extends State<BillingScreen> {
                       try {
                         final tenantId = tenant.tenantId!;
                         final existingCustomerId = tenant.stripeCustomerId ??
-                            await tenantService.getStripeCustomerId(tenantId);
-                        final checkoutUrl = await billing.createCheckoutSession(
+                            await _tenantService.getStripeCustomerId(tenantId);
+                        final checkoutUrl = await _billingService.createCheckoutSession(
                           priceId: priceId,
                           successUrl: 'https://imanagement.pages.dev/success',
                           cancelUrl: 'https://imanagement.pages.dev/cancel',
@@ -213,7 +303,7 @@ class _BillingScreenState extends State<BillingScreen> {
                             setState(() => _isOpeningPortal = true);
                       try {
                         final customerId = tenant.stripeCustomerId ??
-                            await tenantService.getStripeCustomerId(tenant.tenantId!);
+                            await _tenantService.getStripeCustomerId(tenant.tenantId!);
                         if (customerId == null) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -222,7 +312,7 @@ class _BillingScreenState extends State<BillingScreen> {
                           }
                           return;
                         }
-                        final portalUrl = await billing.createPortalSession(
+                        final portalUrl = await _billingService.createPortalSession(
                           customerId: customerId,
                           returnUrl: 'https://imanagement.pages.dev/billing',
                         );
@@ -270,6 +360,16 @@ class _BillingScreenState extends State<BillingScreen> {
         ),
       ],
     );
+  }
+
+  String _formatAmount(int amountCents, String currency) {
+    final formatter = NumberFormat.simpleCurrency(locale: 'fr_FR', name: currency.toUpperCase());
+    return formatter.format(amountCents / 100);
+  }
+
+  String? _formatDate(DateTime? date) {
+    if (date == null) return null;
+    return DateFormat.yMMMMd('fr_FR').format(date);
   }
 }
 
