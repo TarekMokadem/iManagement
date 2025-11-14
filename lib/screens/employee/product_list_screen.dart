@@ -29,6 +29,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     final tenantId = context.watch<TenantProvider>().tenantId;
+    if (tenantId == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final productService = ProductService(tenantId: tenantId);
 
     return Scaffold(
