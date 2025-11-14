@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/operation.dart';
@@ -11,10 +11,10 @@ class StatisticsScreen extends StatefulWidget {
   final String userName;
 
   const StatisticsScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userName,
-  }) : super(key: key);
+  });
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
@@ -174,37 +174,37 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   // Regrouper les opérations par jour de la semaine
                   final dailyOperations = List.generate(7, (index) => <Operation>[]);
                   for (var operation in operations) {
-                    if (operation.type == OperationType.sortie) {
-                      final day = operation.dateTime.weekday;
-                      dailyOperations[day - 1].add(operation);
-                    }
+                    final day = operation.dateTime.weekday;
+                    dailyOperations[day - 1].add(operation);
                   }
 
-                  // Calculer le nombre total d'opérations par jour
-                  final dailyTotals = dailyOperations.map((ops) => ops.length).toList();
+                  // Calculer la quantité totale de mouvements par jour
+                  final dailyTotals = dailyOperations
+                      .map((ops) => ops.fold<int>(0, (sum, op) => sum + op.quantity))
+                      .toList();
 
-                  // Calculer les produits les plus consommés par jour
+                  // Calculer les produits les plus mouvementés par jour
                   final dailyTopProducts = List.generate(7, (index) {
                     final productCounts = <String, int>{};
                     for (var operation in dailyOperations[index]) {
                       productCounts[operation.productName] = 
-                          (productCounts[operation.productName] ?? 0) + 1;
+                          (productCounts[operation.productName] ?? 0) + operation.quantity;
                     }
                     return productCounts.entries.toList()
                       ..sort((a, b) => b.value.compareTo(a.value));
                   });
 
                   if (dailyTotals.every((total) => total == 0)) {
-                    return Center(
+                    return const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.calendar_today, size: 48, color: Colors.grey),
-                          const SizedBox(height: 16),
+                          Icon(Icons.calendar_today, size: 48, color: Colors.grey),
+                          SizedBox(height: 16),
                           Text(
                             'Aucune consommation enregistrée\npour la période sélectionnée',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey,
                             ),
@@ -230,7 +230,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                     '${e.key}: ${e.value}').join('\n');
                                   return BarTooltipItem(
                                     '${_getDayName(groupIndex + 1)}\n'
-                                    '${rod.toY.toInt()} sorties\n\n'
+                                    '${rod.toY.toInt()} mouvements\n\n'
                                     'Top 3 produits:\n$topProductsText',
                                     const TextStyle(color: Colors.white),
                                   );
@@ -238,7 +238,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               ),
                             ),
                             titlesData: FlTitlesData(
-                              show: true,
                               bottomTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
@@ -260,17 +259,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                   },
                                 ),
                               ),
-                              leftTitles: AxisTitles(
+                              leftTitles: const AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
                                   reservedSize: 40,
                                 ),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
                               ),
                             ),
                             borderData: FlBorderData(show: false),
@@ -400,7 +393,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                 for (var operation in operations) {
                   productMovements[operation.productName] = 
-                      (productMovements[operation.productName] ?? 0) + 1;
+                      (productMovements[operation.productName] ?? 0) + operation.quantity;
                 }
 
                 final sortedProducts = productMovements.entries.toList()
