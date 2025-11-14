@@ -11,6 +11,9 @@ class TenantProvider with ChangeNotifier {
   String _plan = 'free';
   Map<String, dynamic> _entitlements = const {};
   String? _stripeCustomerId;
+  String _billingStatus = 'active';
+  String? _billingLastPaymentError;
+  DateTime? _billingCurrentPeriodEnd;
   StreamSubscription<Map<String, dynamic>?>? _tenantSubscription;
 
   TenantProvider({TenantService? tenantService})
@@ -20,6 +23,11 @@ class TenantProvider with ChangeNotifier {
   String get plan => _plan;
   Map<String, dynamic> get entitlements => _entitlements;
   String? get stripeCustomerId => _stripeCustomerId;
+  String get billingStatus => _billingStatus;
+  String? get billingLastPaymentError => _billingLastPaymentError;
+  DateTime? get billingCurrentPeriodEnd => _billingCurrentPeriodEnd;
+
+  bool get hasPaymentIssue => _billingStatus == 'payment_failed' || _billingStatus == 'past_due';
 
   int? get maxUsers => _intFromEntitlement('maxUsers');
   int? get maxProducts => _intFromEntitlement('maxProducts');
@@ -55,12 +63,16 @@ class TenantProvider with ChangeNotifier {
     final hasChanges = _tenantId != null ||
         _stripeCustomerId != null ||
         _plan != 'free' ||
-        _entitlements.isNotEmpty;
+        _entitlements.isNotEmpty ||
+        _billingStatus != 'active';
 
     _tenantId = null;
     _stripeCustomerId = null;
     _plan = 'free';
     _entitlements = const {};
+    _billingStatus = 'active';
+    _billingLastPaymentError = null;
+    _billingCurrentPeriodEnd = null;
 
     if (hasChanges) {
       notifyListeners();
@@ -81,6 +93,10 @@ class TenantProvider with ChangeNotifier {
             ? Map<String, dynamic>.from(rawEntitlements)
             : const <String, dynamic>{};
         final newCustomerId = data?['stripeCustomerId'] as String?;
+        final newBillingStatus = (data?['billingStatus'] as String?) ?? 'active';
+        final newPaymentError = data?['billingLastPaymentError'] as String?;
+        final rawPeriodEnd = data?['billingCurrentPeriodEnd'];
+        final newPeriodEnd = rawPeriodEnd is String ? DateTime.tryParse(rawPeriodEnd) : null;
 
         var shouldNotify = false;
         if (_plan != newPlan) {
@@ -93,6 +109,18 @@ class TenantProvider with ChangeNotifier {
         }
         if (_stripeCustomerId != newCustomerId) {
           _stripeCustomerId = newCustomerId;
+          shouldNotify = true;
+        }
+        if (_billingStatus != newBillingStatus) {
+          _billingStatus = newBillingStatus;
+          shouldNotify = true;
+        }
+        if (_billingLastPaymentError != newPaymentError) {
+          _billingLastPaymentError = newPaymentError;
+          shouldNotify = true;
+        }
+        if (_billingCurrentPeriodEnd != newPeriodEnd) {
+          _billingCurrentPeriodEnd = newPeriodEnd;
           shouldNotify = true;
         }
         if (shouldNotify) {

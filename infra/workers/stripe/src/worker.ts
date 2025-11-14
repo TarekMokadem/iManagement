@@ -444,6 +444,41 @@ async function handleInvoicePaid(env: Env, invoice: any): Promise<void> {
   }
 }
 
+async function handleInvoicePaymentFailed(env: Env, invoice: any): Promise<void> {
+  const customerId = getStripeId(invoice.customer);
+  const subscriptionId = getStripeId(invoice.subscription);
+  
+  if (!customerId) {
+    console.warn('Invoice payment_failed sans customerId', invoice.id);
+    return;
+  }
+
+  const tenantId = await findTenantIdByStripeCustomer(env, customerId);
+  if (!tenantId) {
+    console.warn('Invoice payment_failed sans tenantId trouvé', invoice.id, customerId);
+    return;
+  }
+
+  const fields: Record<string, unknown> = {
+    billingStatus: 'payment_failed',
+    billingLastPaymentError: invoice.last_payment_error?.message || 'Échec du paiement',
+    billingUpdatedAt: new Date().toISOString(),
+  };
+
+  // Si on a l'ID de subscription, on récupère aussi les infos à jour
+  if (subscriptionId) {
+    try {
+      const subscription = await fetchStripeSubscription(env, subscriptionId);
+      fields.billingCurrentPeriodEnd = unixToIso(subscription.current_period_end);
+    } catch (error) {
+      console.error('Erreur fetch subscription dans payment_failed:', error);
+    }
+  }
+
+  await updateTenantDocument(env, tenantId, fields);
+  console.log(`Tenant ${tenantId} marqué payment_failed suite à invoice ${invoice.id}`);
+}
+
 async function handleStripeEvent(env: Env, event: any): Promise<void> {
   switch (event.type) {
     case 'checkout.session.completed':
@@ -458,6 +493,9 @@ async function handleStripeEvent(env: Env, event: any): Promise<void> {
       break;
     case 'invoice.paid':
       await handleInvoicePaid(env, event.data.object);
+      break;
+    case 'invoice.payment_failed':
+      await handleInvoicePaymentFailed(env, event.data.object);
       break;
     default:
       console.log(`Événement Stripe non géré: ${event.type}`);

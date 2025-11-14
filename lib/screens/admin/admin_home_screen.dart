@@ -45,6 +45,51 @@ class AdminHomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Consumer<TenantProvider>(
+              builder: (context, tenant, child) {
+                if (tenant.hasPaymentIssue) {
+                  return Container(
+                    padding: const EdgeInsets.all(16.0),
+                    color: Colors.red.shade100,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning, color: Colors.red),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Problème de paiement détecté',
+                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                              ),
+                              if (tenant.billingLastPaymentError != null)
+                                Text(
+                                  tenant.billingLastPaymentError!,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              const SizedBox(height: 4),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (context) => const BillingScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text('Mettre à jour mon moyen de paiement'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             Container(
               padding: const EdgeInsets.all(16.0),
               color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
