@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/product.dart';
+import '../../providers/tenant_provider.dart';
 import '../../services/product_service.dart';
 
 class CriticalProductsScreen extends StatelessWidget {
@@ -16,12 +18,21 @@ class CriticalProductsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tenantId = context.watch<TenantProvider>().tenantId;
+    if (tenantId == null || tenantId.isEmpty) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Produits critiques'),
       ),
       body: StreamBuilder<List<Product>>(
-        stream: _productService.getCriticalProducts(),
+        stream: _productService.getCriticalProducts(tenantId: tenantId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(

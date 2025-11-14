@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/product.dart';
+import '../../providers/tenant_provider.dart';
 import '../../services/product_service.dart';
 import '../../widgets/loading_indicator.dart';
 import 'product_detail_screen.dart';
@@ -27,6 +29,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tenantId = context.watch<TenantProvider>().tenantId;
+    if (tenantId == null || tenantId.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Liste des Produits'),
@@ -81,7 +90,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Product>>(
-              stream: productService.getAllProducts(),
+              stream: productService.getAllProducts(tenantId: tenantId),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text('Erreur: ${snapshot.error}'));

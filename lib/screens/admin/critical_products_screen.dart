@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/product.dart';
+import '../../providers/tenant_provider.dart';
 import '../../services/product_service.dart';
 import '../../widgets/loading_indicator.dart';
 
@@ -26,6 +28,13 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tenantId = context.watch<TenantProvider>().tenantId;
+    if (tenantId == null || tenantId.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Produits Critiques'),
@@ -80,7 +89,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Product>>(
-              stream: productService.getAllProducts().map((products) {
+              stream: productService.getAllProducts(tenantId: tenantId).map((products) {
                 // Filtrer les produits critiques
                 return products.where((product) => product.isCritical).toList();
               }),
@@ -161,7 +170,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.edit),
-                          onPressed: () => _showEditProductDialog(context, product),
+                          onPressed: () => _showEditProductDialog(context, product, tenantId),
                         ),
                       ),
                     );
@@ -175,7 +184,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
     );
   }
 
-  Future<void> _showEditProductDialog(BuildContext context, Product product) async {
+  Future<void> _showEditProductDialog(BuildContext context, Product product, String tenantId) async {
     final nameController = TextEditingController(text: product.name);
     final locationController = TextEditingController(text: product.location);
     final quantityController = TextEditingController(text: product.quantity.toString());
@@ -224,7 +233,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
                 criticalThreshold: int.tryParse(thresholdController.text) ?? product.criticalThreshold,
                 lastUpdated: DateTime.now(),
               );
-              productService.updateProduct(updatedProduct.id, updatedProduct);
+              productService.updateProduct(updatedProduct.id, updatedProduct, tenantId: tenantId);
               Navigator.pop(context);
             },
             child: const Text('Modifier'),

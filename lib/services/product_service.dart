@@ -8,36 +8,44 @@ class ProductService {
   final String _collection = 'products';
 
   // Obtenir tous les produits
-  Stream<List<Product>> getAllProducts() {
-    return _firestore
-        .collection(_collection)
-        .orderBy('lastUpdated', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Product.fromMap({...doc.data(), 'id': doc.id}))
-            .toList());
+  Stream<List<Product>> getAllProducts({required String tenantId}) {
+    Query<Map<String, dynamic>> query =
+        _firestore.collection(_collection).orderBy('lastUpdated', descending: true);
+    if (tenantId.isNotEmpty) {
+      query = query.where('tenantId', isEqualTo: tenantId);
+    }
+    return query.snapshots().map((snapshot) => snapshot.docs
+        .map((doc) => Product.fromMap({...doc.data(), 'id': doc.id}))
+        .toList());
   }
 
   // Obtenir les produits critiques
-  Stream<List<Product>> getCriticalProducts() {
-    return _firestore
-        .collection(_collection)
-        .orderBy('lastUpdated', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Product.fromMap({...doc.data(), 'id': doc.id}))
-            .where((product) => product.isCritical)
-            .toList());
+  Stream<List<Product>> getCriticalProducts({required String tenantId}) {
+    Query<Map<String, dynamic>> query =
+        _firestore.collection(_collection).orderBy('lastUpdated', descending: true);
+    if (tenantId.isNotEmpty) {
+      query = query.where('tenantId', isEqualTo: tenantId);
+    }
+    return query.snapshots().map((snapshot) => snapshot.docs
+        .map((doc) => Product.fromMap({...doc.data(), 'id': doc.id}))
+        .where((product) => product.isCritical)
+        .toList());
   }
 
   // Ajouter un nouveau produit
-  Future<void> addProduct(Product product) async {
-    await _firestore.collection(_collection).add(product.toMap());
+  Future<void> addProduct(Product product, {required String tenantId}) async {
+    final data = product.toMap();
+    data['tenantId'] = tenantId;
+    await _firestore.collection(_collection).add(data);
   }
 
   // Mettre à jour un produit
-  Future<void> updateProduct(String id, Product product) async {
-    await _firestore.collection(_collection).doc(id).update(product.toMap());
+  Future<void> updateProduct(String id, Product product, {String? tenantId}) async {
+    final data = product.toMap();
+    if (tenantId != null && tenantId.isNotEmpty) {
+      data['tenantId'] = tenantId;
+    }
+    await _firestore.collection(_collection).doc(id).update(data);
   }
 
   // Supprimer un produit
@@ -87,8 +95,8 @@ class ProductService {
   }
 
   // Rechercher des produits par nom
-  Stream<List<Product>> searchProducts(String query) {
-    return getAllProducts().map((products) => products
+  Stream<List<Product>> searchProducts(String query, {required String tenantId}) {
+    return getAllProducts(tenantId: tenantId).map((products) => products
         .where((product) =>
             product.name.toLowerCase().contains(query.toLowerCase()))
         .toList());

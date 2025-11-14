@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../models/product.dart';
+import '../../providers/tenant_provider.dart';
 import '../../services/product_service.dart';
 
 class ProductFormScreen extends StatefulWidget {
@@ -53,6 +56,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final tenantId = context.read<TenantProvider>().tenantId;
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('Tenant non défini');
+      }
+
       final product = Product(
         id: widget.product?.id ?? '',
         name: _nameController.text,
@@ -63,9 +71,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       );
 
       if (widget.product == null) {
-        await _productService.addProduct(product);
+        await _productService.addProduct(product, tenantId: tenantId);
       } else {
-        await _productService.updateProduct(widget.product!.id, product);
+        await _productService.updateProduct(widget.product!.id, product, tenantId: tenantId);
       }
 
       if (mounted) {
