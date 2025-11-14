@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/tenant_provider.dart';
@@ -16,6 +17,12 @@ class BillingScreen extends StatefulWidget {
 class _BillingScreenState extends State<BillingScreen> {
   bool _isCreatingCheckout = false;
   bool _isOpeningPortal = false;
+
+  @override
+  void initState() {
+    super.initState();
+    initializeDateFormatting('fr_FR');
+  }
 
   @override
   Widget build(BuildContext context) {
