@@ -22,7 +22,7 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  final ProductService productService = ProductService();
+  late final ProductService productService;
   String _searchQuery = '';
   String _sortBy = 'location';
   bool _sortAscending = true;
@@ -30,11 +30,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     final tenantId = context.watch<TenantProvider>().tenantId;
-    if (tenantId == null || tenantId.isEmpty) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    productService = ProductService(tenantId: tenantId);
 
     return Scaffold(
       appBar: AppBar(
@@ -90,7 +86,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Product>>(
-              stream: productService.getAllProducts(tenantId: tenantId),
+              stream: productService.getAllProducts(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text('Erreur: ${snapshot.error}'));

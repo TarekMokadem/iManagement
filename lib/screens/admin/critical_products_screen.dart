@@ -89,7 +89,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Product>>(
-              stream: productService.getAllProducts(tenantId: tenantId).map((products) {
+              stream: productService.getAllProducts().map((products) {
                 // Filtrer les produits critiques
                 return products.where((product) => product.isCritical).toList();
               }),
