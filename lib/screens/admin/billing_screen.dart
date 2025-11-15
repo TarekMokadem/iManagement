@@ -135,15 +135,25 @@ class _BillingScreenState extends State<BillingScreen> {
                       const SizedBox(height: 16),
                       const Divider(),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Votre abonnement inclut :',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Inclus dans votre plan',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
-                      ..._buildEntitlementCards(tenant),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _buildCompactEntitlements(tenant),
+                      ),
                     ],
                   ],
                 ),
@@ -369,123 +379,81 @@ class _BillingScreenState extends State<BillingScreen> {
     return DateFormat.yMMMMd('fr_FR').format(date);
   }
 
-  List<Widget> _buildEntitlementCards(TenantProvider tenant) {
-    final entitlements = <Map<String, dynamic>>[
+  List<Widget> _buildCompactEntitlements(TenantProvider tenant) {
+    final items = <Map<String, dynamic>>[
       {
-        'icon': Icons.people,
-        'label': 'Utilisateurs',
-        'value': tenant.maxUsers?.toString() ?? 'Illimité',
-        'color': Colors.blue,
+        'icon': Icons.people_outline,
+        'text': '${tenant.maxUsers ?? "∞"} utilisateurs',
       },
       {
-        'icon': Icons.inventory_2,
-        'label': 'Produits',
-        'value': tenant.maxProducts?.toString() ?? 'Illimité',
-        'color': Colors.orange,
+        'icon': Icons.inventory_2_outlined,
+        'text': '${_formatCompactNumber(tenant.maxProducts)} produits',
       },
       {
         'icon': Icons.sync_alt,
-        'label': 'Opérations/mois',
-        'value': _formatNumber(tenant.entitlements['maxOperationsPerMonth']),
-        'color': Colors.green,
+        'text': '${_formatCompactNumber(tenant.entitlements['maxOperationsPerMonth'])} ops/mois',
       },
+      if (tenant.entitlements['exports'] == 'true')
+        {
+          'icon': Icons.file_download_outlined,
+          'text': 'Exports',
+        },
       {
-        'icon': Icons.file_download,
-        'label': 'Exports',
-        'value': tenant.entitlements['exports'] == 'true' ? 'Activés' : 'Désactivés',
-        'color': Colors.purple,
-      },
-      {
-        'icon': Icons.support_agent,
-        'label': 'Support',
-        'value': tenant.entitlements['support'] ?? 'Community',
-        'color': Colors.teal,
+        'icon': Icons.support_agent_outlined,
+        'text': tenant.entitlements['support'] ?? 'Community',
       },
     ];
 
-    return [
-      GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 2.5,
+    return items.map((item) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade300),
         ),
-        itemCount: entitlements.length,
-        itemBuilder: (context, index) {
-          final item = entitlements[index];
-          return Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: (item['color'] as Color).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: (item['color'] as Color).withValues(alpha: 0.3),
-                width: 1.5,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              item['icon'] as IconData,
+              size: 16,
+              color: Colors.grey.shade700,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              item['text'] as String,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade800,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: item['color'] as Color,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    item['icon'] as IconData,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        item['label'] as String,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        item['value'] as String,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    ];
+          ],
+        ),
+      );
+    }).toList();
   }
 
-  String _formatNumber(dynamic value) {
-    if (value == null) return 'Illimité';
+  String _formatCompactNumber(dynamic value) {
+    if (value == null) return '∞';
+    int? number;
     if (value is int) {
-      return NumberFormat.decimalPattern('fr_FR').format(value);
+      number = value;
+    } else if (value is String) {
+      number = int.tryParse(value);
     }
-    if (value is String) {
-      final parsed = int.tryParse(value);
-      if (parsed != null) {
-        return NumberFormat.decimalPattern('fr_FR').format(parsed);
-      }
+    
+    if (number == null) return value.toString();
+    
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(number % 1000000 == 0 ? 0 : 1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(number % 1000 == 0 ? 0 : 1)}k';
     }
-    return value.toString();
+    return number.toString();
   }
+
 }
 
 
