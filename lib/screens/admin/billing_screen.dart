@@ -140,7 +140,7 @@ class _BillingScreenState extends State<BillingScreen> {
                           Icon(Icons.star, color: Colors.amber.shade700, size: 20),
                           const SizedBox(width: 8),
                           const Text(
-                            'Inclus dans votre plan',
+                            'Limites de votre abonnement',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -148,12 +148,16 @@ class _BillingScreenState extends State<BillingScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _buildCompactEntitlements(tenant),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Voici les quotas maximum autorisés par votre plan actuel',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      ..._buildDetailedEntitlements(tenant),
                     ],
                   ],
                 ),
@@ -379,54 +383,116 @@ class _BillingScreenState extends State<BillingScreen> {
     return DateFormat.yMMMMd('fr_FR').format(date);
   }
 
-  List<Widget> _buildCompactEntitlements(TenantProvider tenant) {
+  List<Widget> _buildDetailedEntitlements(TenantProvider tenant) {
     final items = <Map<String, dynamic>>[
       {
         'icon': Icons.people_outline,
-        'text': '${tenant.maxUsers ?? "∞"} utilisateurs',
+        'title': 'Utilisateurs',
+        'value': tenant.maxUsers?.toString() ?? '∞',
+        'description': 'Nombre maximum de comptes utilisateurs',
+        'color': Colors.blue,
       },
       {
         'icon': Icons.inventory_2_outlined,
-        'text': '${_formatCompactNumber(tenant.maxProducts)} produits',
+        'title': 'Produits',
+        'value': _formatCompactNumber(tenant.maxProducts),
+        'description': 'Nombre maximum de produits en stock',
+        'color': Colors.orange,
       },
       {
         'icon': Icons.sync_alt,
-        'text': '${_formatCompactNumber(tenant.entitlements['maxOperationsPerMonth'])} ops/mois',
+        'title': 'Opérations mensuelles',
+        'value': _formatCompactNumber(tenant.entitlements['maxOperationsPerMonth']),
+        'description': 'Mouvements de stock par mois',
+        'color': Colors.green,
       },
-      if (tenant.entitlements['exports'] == 'true')
-        {
-          'icon': Icons.file_download_outlined,
-          'text': 'Exports',
-        },
+      {
+        'icon': Icons.file_download_outlined,
+        'title': 'Exports',
+        'value': tenant.entitlements['exports'] == 'true' ? 'Activés' : 'Désactivés',
+        'description': 'Export des données en CSV/Excel',
+        'color': Colors.purple,
+      },
       {
         'icon': Icons.support_agent_outlined,
-        'text': tenant.entitlements['support'] ?? 'Community',
+        'title': 'Support',
+        'value': tenant.entitlements['support'] ?? 'Community',
+        'description': tenant.entitlements['support'] == 'priority' 
+            ? 'Assistance prioritaire sous 24h'
+            : 'Forum communautaire',
+        'color': Colors.teal,
       },
     ];
 
     return items.map((item) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.shade300),
+          color: (item['color'] as Color).withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: (item['color'] as Color).withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              item['icon'] as IconData,
-              size: 16,
-              color: Colors.grey.shade700,
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (item['color'] as Color).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                item['icon'] as IconData,
+                size: 22,
+                color: item['color'] as Color,
+              ),
             ),
-            const SizedBox(width: 6),
-            Text(
-              item['text'] as String,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade800,
-                fontWeight: FontWeight.w500,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        item['title'] as String,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: item['color'] as Color,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          item['value'] as String,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item['description'] as String,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
