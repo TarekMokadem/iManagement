@@ -78,54 +78,101 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Statistiques'),
+        elevation: 0,
+        title: const Text(
+          'Statistiques',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildPeriodSelector(),
+            _buildPeriodSelector(colorScheme),
             const SizedBox(height: 24),
-            _buildWeeklyConsumptionChart(),
+            _buildWeeklyConsumptionChart(colorScheme),
             const SizedBox(height: 24),
-            _buildTopProductsChart(),
+            _buildTopProductsChart(colorScheme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPeriodSelector() {
+  Widget _buildPeriodSelector(ColorScheme colorScheme) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primaryContainer.withValues(alpha: 0.3),
+              colorScheme.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Période',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.calendar_today, color: colorScheme.primary, size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  'Période d\'analyse',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Wrap(
-              spacing: 8,
+              spacing: 12,
+              runSpacing: 12,
               children: _periods.map((period) {
-                return ChoiceChip(
-                  label: Text(_getPeriodLabel(period)),
-                  selected: _selectedPeriod == period,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() {
-                        _selectedPeriod = period;
-                      });
-                    }
-                  },
+                final isSelected = _selectedPeriod == period;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  child: ChoiceChip(
+                    label: Text(
+                      _getPeriodLabel(period),
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 15,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: colorScheme.primary,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    labelStyle: TextStyle(
+                      color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+                    ),
+                    elevation: isSelected ? 4 : 0,
+                    pressElevation: 6,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedPeriod = period;
+                        });
+                      }
+                    },
+                  ),
                 );
               }).toList(),
             ),
@@ -135,21 +182,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildWeeklyConsumptionChart() {
+  Widget _buildWeeklyConsumptionChart(ColorScheme colorScheme) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.secondaryContainer.withValues(alpha: 0.2),
+              colorScheme.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Consommation par Jour de la Semaine',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.bar_chart, color: colorScheme.secondary, size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  'Mouvements par Jour',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             SizedBox(
               height: 400,
               child: StreamBuilder<List<Operation>>(
@@ -195,18 +262,32 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   });
 
                   if (dailyTotals.every((total) => total == 0)) {
-                    return const Center(
+                    return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.calendar_today, size: 48, color: Colors.grey),
-                          SizedBox(height: 16),
+                          Icon(
+                            Icons.inbox_outlined,
+                            size: 64,
+                            color: colorScheme.outline,
+                          ),
+                          const SizedBox(height: 16),
                           Text(
-                            'Aucune consommation enregistrée\npour la période sélectionnée',
+                            'Aucun mouvement enregistré',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'pour la période sélectionnée',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.outline,
                             ),
                           ),
                         ],
@@ -273,11 +354,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 barRods: [
                                   BarChartRodData(
                                     toY: dailyTotals[index].toDouble(),
-                                    color: Colors.orange,
-                                    width: 20,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        colorScheme.primary,
+                                        colorScheme.secondary,
+                                      ],
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                    ),
+                                    width: 24,
                                     borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(6),
-                                      topRight: Radius.circular(6),
+                                      topLeft: Radius.circular(8),
+                                      topRight: Radius.circular(8),
                                     ),
                                   ),
                                 ],
@@ -286,62 +374,157 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Top 3 des produits les plus consommés par jour',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: List.generate(7, (index) {
-                            final topProducts = dailyTopProducts[index];
-                            return Expanded(
-                              child: Card(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _getDayName(index + 1),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      ...topProducts.take(3).map((entry) => Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                entry.key,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            Text(
-                                              '${entry.value}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )),
-                                    ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.trending_up,
+                                  color: colorScheme.primary,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Top 3 produits par jour',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 180,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 7,
+                                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                                itemBuilder: (context, index) {
+                                  final topProducts = dailyTopProducts[index];
+                                  return Container(
+                                    width: 200,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.outline.withValues(alpha: 0.2),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: colorScheme.shadow.withValues(alpha: 0.1),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.primary,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            _getDayName(index + 1),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Expanded(
+                                          child: topProducts.isEmpty
+                                              ? Center(
+                                                  child: Text(
+                                                    'Aucun mouvement',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: colorScheme.outline,
+                                                    ),
+                                                  ),
+                                                )
+                                              : ListView.separated(
+                                                  itemCount: topProducts.length > 3 ? 3 : topProducts.length,
+                                                  separatorBuilder: (context, idx) => const Divider(height: 12),
+                                                  itemBuilder: (context, idx) {
+                                                    final entry = topProducts[idx];
+                                                    return Row(
+                                                      children: [
+                                                        Container(
+                                                          width: 24,
+                                                          height: 24,
+                                                          decoration: BoxDecoration(
+                                                            color: idx == 0
+                                                                ? Colors.amber
+                                                                : idx == 1
+                                                                    ? Colors.grey.shade400
+                                                                    : Colors.brown.shade300,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: Center(
+                                                            child: Text(
+                                                              '${idx + 1}',
+                                                              style: const TextStyle(
+                                                                fontSize: 12,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: Colors.white,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                entry.key,
+                                                                overflow: TextOverflow.ellipsis,
+                                                                style: const TextStyle(
+                                                                  fontSize: 13,
+                                                                  fontWeight: FontWeight.w600,
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                '${entry.value} unités',
+                                                                style: TextStyle(
+                                                                  fontSize: 11,
+                                                                  color: colorScheme.outline,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          }),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -355,21 +538,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildTopProductsChart() {
+  Widget _buildTopProductsChart(ColorScheme colorScheme) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.tertiaryContainer.withValues(alpha: 0.2),
+              colorScheme.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Top 5 des Produits les Plus Mouvementés',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.emoji_events, color: colorScheme.tertiary, size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  'Top 5 Produits',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             StreamBuilder<List<Operation>>(
               stream: Provider.of<OperationsRepository>(context, listen: false)
                   .watchAll(
@@ -400,34 +603,137 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ..sort((a, b) => b.value.compareTo(a.value));
 
                 if (sortedProducts.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'Aucun mouvement pour la période sélectionnée',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.inbox_outlined,
+                            size: 64,
+                            color: colorScheme.outline,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Aucun mouvement',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'pour la période sélectionnée',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.outline,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
                 }
 
-                return ListView.builder(
+                return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: sortedProducts.length > 5 ? 5 : sortedProducts.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    color: colorScheme.outline.withValues(alpha: 0.2),
+                  ),
                   itemBuilder: (context, index) {
                     final entry = sortedProducts[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: Text('${index + 1}'),
-                      ),
-                      title: Text(entry.key),
-                      trailing: Text(
-                        '${entry.value} mouvements',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                    final medalColors = [
+                      Colors.amber,
+                      Colors.grey.shade400,
+                      Colors.brown.shade300,
+                      colorScheme.primary.withValues(alpha: 0.7),
+                      colorScheme.primary.withValues(alpha: 0.5),
+                    ];
+                    
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.1),
                         ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: medalColors[index],
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: medalColors[index].withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  entry.key,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${entry.value} unités mouvementées',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${entry.value}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
