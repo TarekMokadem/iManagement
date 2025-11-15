@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
-import 'providers/tenant_provider.dart';
 import 'providers/session_provider.dart';
+import 'providers/tenant_provider.dart';
 import 'repositories/firestore_operations_repository.dart';
 import 'repositories/firestore_products_repository.dart';
 import 'repositories/firestore_users_repository.dart';
@@ -13,8 +13,11 @@ import 'repositories/products_repository.dart';
 import 'repositories/users_repository.dart';
 import 'screens/checkout_cancel_screen.dart';
 import 'screens/checkout_success_screen.dart';
+import 'screens/landing/landing_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding/onboarding_wizard_screen.dart';
 import 'screens/root_screen.dart';
+import 'screens/signup/signup_screen.dart';
 import 'widgets/guards.dart';
 
 void main() async {
@@ -47,8 +50,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const RootScreen(),
+        '/': (context) => const LandingScreen(),
         '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
+        '/onboarding': (context) => const OnboardingWizardScreen(),
+        '/app': (context) => const RootScreen(),
         '/success': (context) => const CheckoutSuccessScreen(),
         '/cancel': (context) => const CheckoutCancelScreen(),
         '/employee': (context) => const EmployeeGuard(),

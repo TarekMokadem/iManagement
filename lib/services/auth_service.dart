@@ -1,124 +1,102 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async';
+import 'package:crypto/crypto.dart';
 
 class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  late SharedPreferences _prefs;
-  static const String _attemptsKey = 'login_attempts';
-  static const String _lastAttemptTimeKey = 'last_attempt_time';
-  static const int _maxAttempts = 10;
-  static const int _blockDurationMinutes = 15;
 
-  AuthService() {
-    _initPrefs();
-  }
+  /// Inscription : crée un tenant + user admin
+  Future<Map<String, String>> signup({
+    required String name,
+    required String email,
+    required String password,
+    required String companyName,
+  }) async {
+    // Vérifier si l'email existe déjà
+    final existingUsers = await _firestore
+        .collection('users')
+        .where('email', isEqualTo: email.toLowerCase())
+        .get();
 
-  Future<void> _initPrefs() async {
-    _prefs = await SharedPreferences.getInstance();
-  }
-
-  Future<AppUser> login(String code) async {
-    // Vérifier si l'utilisateur est bloqué
-    if (await _isUserBlocked()) {
-      throw 'Trop de tentatives de connexion. Veuillez réessayer dans ${_getRemainingBlockTime()} minutes.';
+    if (existingUsers.docs.isNotEmpty) {
+      throw Exception('Cet email est déjà utilisé');
     }
 
-    try {
-      final querySnapshot = await _firestore
-          .collection('users')
-          .where('code', isEqualTo: code)
-          .limit(1)
-          .get();
+    // Créer le tenant
+    final tenantRef = await _firestore.collection('tenants').add({
+      'name': companyName,
+      'plan': 'free',
+      'createdAt': FieldValue.serverTimestamp(),
+      'entitlements': {
+        'maxUsers': 3,
+        'maxProducts': 200,
+        'maxOperationsPerMonth': 1000,
+        'exports': 'false',
+        'support': 'community',
+      },
+      'billingStatus': 'active',
+    });
 
-      if (querySnapshot.docs.isEmpty) {
-        await _incrementAttempts();
-        throw 'Code invalide';
-      }
+    final tenantId = tenantRef.id;
 
-      // Réinitialiser les tentatives en cas de succès
-      await _resetAttempts();
+    // Hasher le mot de passe
+    final hashedPassword = _hashPassword(password);
 
-      final userDoc = querySnapshot.docs.first;
-      final userData = userDoc.data();
-      userData['id'] = userDoc.id;
-      return AppUser.fromMap(userData);
-    } catch (e) {
-      if (e is! String) {
-        await _incrementAttempts();
-        throw 'Une erreur est survenue lors de la connexion';
-      }
-      rethrow;
+    // Créer l'utilisateur admin
+    final userRef = await _firestore.collection('users').add({
+      'name': name,
+      'email': email.toLowerCase(),
+      'password': hashedPassword,
+      'tenantId': tenantId,
+      'isAdmin': true,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    return {
+      'userId': userRef.id,
+      'userName': name,
+      'tenantId': tenantId,
+    };
+  }
+
+  /// Connexion : vérifie email + password
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .where('email', isEqualTo: email.toLowerCase())
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      throw Exception('Email ou mot de passe incorrect');
     }
-  }
 
-  Future<UserCredential?> signInWithEmailAndPassword(String email, String password) async {
-    // Vérifier si l'utilisateur est bloqué
-    if (await _isUserBlocked()) {
-      throw 'Trop de tentatives de connexion. Veuillez réessayer dans ${_getRemainingBlockTime()} minutes.';
+    final userDoc = snapshot.docs.first;
+    final userData = userDoc.data();
+    final storedHash = userData['password'] as String?;
+
+    if (storedHash == null || storedHash != _hashPassword(password)) {
+      throw Exception('Email ou mot de passe incorrect');
     }
 
-    try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      
-      // Réinitialiser les tentatives en cas de succès
-      await _resetAttempts();
-      return userCredential;
-    } on FirebaseAuthException catch (e) {
-      // Incrémenter le nombre de tentatives en cas d'échec
-      await _incrementAttempts();
-      throw e.message ?? 'Une erreur est survenue lors de la connexion';
-    }
+    return {
+      'id': userDoc.id,
+      'name': userData['name'] as String,
+      'email': userData['email'] as String,
+      'tenantId': userData['tenantId'] as String,
+      'isAdmin': userData['isAdmin'] as bool? ?? false,
+    };
   }
 
-  Future<void> signOut() async {
-    await _auth.signOut();
+  /// Hash simple du mot de passe (SHA-256)
+  /// ⚠️ En production, utiliser Firebase Auth ou un système plus robuste
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
-
-  Future<bool> _isUserBlocked() async {
-    final attempts = _prefs.getInt(_attemptsKey) ?? 0;
-    if (attempts >= _maxAttempts) {
-      final lastAttemptTime = _prefs.getInt(_lastAttemptTimeKey) ?? 0;
-      final now = DateTime.now().millisecondsSinceEpoch;
-      final blockDuration = _blockDurationMinutes * 60 * 1000; // Convertir en millisecondes
-      
-      if (now - lastAttemptTime < blockDuration) {
-        return true;
-      } else {
-        // Réinitialiser si le temps de blocage est écoulé
-        await _resetAttempts();
-        return false;
-      }
-    }
-    return false;
-  }
-
-  Future<void> _incrementAttempts() async {
-    final attempts = (_prefs.getInt(_attemptsKey) ?? 0) + 1;
-    await _prefs.setInt(_attemptsKey, attempts);
-    await _prefs.setInt(_lastAttemptTimeKey, DateTime.now().millisecondsSinceEpoch);
-  }
-
-  Future<void> _resetAttempts() async {
-    await _prefs.setInt(_attemptsKey, 0);
-    await _prefs.setInt(_lastAttemptTimeKey, 0);
-  }
-
-  int _getRemainingBlockTime() {
-    final lastAttemptTime = _prefs.getInt(_lastAttemptTimeKey) ?? 0;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final blockDuration = _blockDurationMinutes * 60 * 1000;
-    final remainingTime = (blockDuration - (now - lastAttemptTime)) ~/ (60 * 1000);
-    return remainingTime > 0 ? remainingTime : 0;
-  }
-
-  Future<int> getRemainingAttempts() async {
-    return _maxAttempts - (_prefs.getInt(_attemptsKey) ?? 0);
-  }
-} 
+}
