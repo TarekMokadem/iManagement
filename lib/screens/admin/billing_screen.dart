@@ -132,21 +132,18 @@ class _BillingScreenState extends State<BillingScreen> {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     if (tenant.entitlements.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       const Divider(),
-                      const SizedBox(height: 8),
-                      const Text('Votre abonnement inclut :', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      ...tenant.entitlements.entries.map((e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                            const SizedBox(width: 8),
-                            Text('${e.key}: ${e.value}'),
-                          ],
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Votre abonnement inclut :',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
-                      )),
+                      ),
+                      const SizedBox(height: 12),
+                      ..._buildEntitlementCards(tenant),
                     ],
                   ],
                 ),
@@ -370,6 +367,124 @@ class _BillingScreenState extends State<BillingScreen> {
   String? _formatDate(DateTime? date) {
     if (date == null) return null;
     return DateFormat.yMMMMd('fr_FR').format(date);
+  }
+
+  List<Widget> _buildEntitlementCards(TenantProvider tenant) {
+    final entitlements = <Map<String, dynamic>>[
+      {
+        'icon': Icons.people,
+        'label': 'Utilisateurs',
+        'value': tenant.maxUsers?.toString() ?? 'Illimité',
+        'color': Colors.blue,
+      },
+      {
+        'icon': Icons.inventory_2,
+        'label': 'Produits',
+        'value': tenant.maxProducts?.toString() ?? 'Illimité',
+        'color': Colors.orange,
+      },
+      {
+        'icon': Icons.sync_alt,
+        'label': 'Opérations/mois',
+        'value': _formatNumber(tenant.entitlements['maxOperationsPerMonth']),
+        'color': Colors.green,
+      },
+      {
+        'icon': Icons.file_download,
+        'label': 'Exports',
+        'value': tenant.entitlements['exports'] == 'true' ? 'Activés' : 'Désactivés',
+        'color': Colors.purple,
+      },
+      {
+        'icon': Icons.support_agent,
+        'label': 'Support',
+        'value': tenant.entitlements['support'] ?? 'Community',
+        'color': Colors.teal,
+      },
+    ];
+
+    return [
+      GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 2.5,
+        ),
+        itemCount: entitlements.length,
+        itemBuilder: (context, index) {
+          final item = entitlements[index];
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: (item['color'] as Color).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: (item['color'] as Color).withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: item['color'] as Color,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    item['icon'] as IconData,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        item['label'] as String,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item['value'] as String,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ];
+  }
+
+  String _formatNumber(dynamic value) {
+    if (value == null) return 'Illimité';
+    if (value is int) {
+      return NumberFormat.decimalPattern('fr_FR').format(value);
+    }
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) {
+        return NumberFormat.decimalPattern('fr_FR').format(parsed);
+      }
+    }
+    return value.toString();
   }
 }
 
