@@ -43,8 +43,9 @@ class AuthService {
     // Hasher le mot de passe
     final hashedPassword = _hashPassword(password);
 
-    // Créer l'utilisateur admin
-    final userRef = await _firestore.collection('users').add({
+    // Créer l'utilisateur admin avec ID = nom
+    final userDocId = _sanitizeId(name);
+    await _firestore.collection('users').doc(userDocId).set({
       'name': name,
       'email': email.toLowerCase(),
       'password': hashedPassword,
@@ -54,7 +55,7 @@ class AuthService {
     });
 
     return {
-      'userId': userRef.id,
+      'userId': userDocId,
       'userName': name,
       'tenantId': tenantId,
     };
@@ -90,6 +91,36 @@ class AuthService {
       'tenantId': userData['tenantId'] as String,
       'isAdmin': userData['isAdmin'] as bool? ?? false,
     };
+  }
+
+  /// Connexion par code d'accès (utilisateurs de l'application)
+  Future<Map<String, dynamic>> loginWithAccessCode(String accessCode) async {
+    final snap = await _firestore
+        .collection('users')
+        .where('code', isEqualTo: accessCode)
+        .limit(1)
+        .get();
+
+    if (snap.docs.isEmpty) {
+      throw Exception('Code d’accès invalide');
+    }
+    final doc = snap.docs.first;
+    final data = doc.data();
+    return {
+      'id': doc.id,
+      'name': data['name'] as String,
+      'email': data['email'] as String?,
+      'tenantId': data['tenantId'] as String,
+      'isAdmin': data['isAdmin'] as bool? ?? false,
+    };
+  }
+
+  String _sanitizeId(String input) {
+    return input
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_\- ]'), '')
+        .replaceAll(RegExp(r'\s+'), '_');
   }
 
   /// Hash simple du mot de passe (SHA-256)

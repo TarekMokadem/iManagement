@@ -21,7 +21,6 @@ class CriticalProductsScreen extends StatefulWidget {
 }
 
 class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
-  final ProductService productService = ProductService();
   String _searchQuery = '';
   String _sortBy = 'location';
   bool _sortAscending = true;
@@ -89,7 +88,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Product>>(
-              stream: productService.getAllProducts().map((products) {
+              stream: ProductService(tenantId: tenantId).getAllProducts().map((products) {
                 // Filtrer les produits critiques
                 return products.where((product) => product.isCritical).toList();
               }),
@@ -233,7 +232,7 @@ class _CriticalProductsScreenState extends State<CriticalProductsScreen> {
                 criticalThreshold: int.tryParse(thresholdController.text) ?? product.criticalThreshold,
                 lastUpdated: DateTime.now(),
               );
-              productService.updateProduct(updatedProduct.id, updatedProduct, tenantId: tenantId);
+              ProductService(tenantId: tenantId).updateProduct(updatedProduct.id, updatedProduct, tenantId: tenantId);
               Navigator.pop(context);
             },
             child: const Text('Modifier'),

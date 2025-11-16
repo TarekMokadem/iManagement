@@ -14,10 +14,11 @@ import 'repositories/users_repository.dart';
 import 'screens/checkout_cancel_screen.dart';
 import 'screens/checkout_success_screen.dart';
 import 'screens/landing/landing_screen.dart';
-import 'screens/login_screen.dart';
 import 'screens/onboarding/onboarding_wizard_screen.dart';
 import 'screens/root_screen.dart';
 import 'screens/signup/signup_screen.dart';
+import 'screens/tenant_login_screen.dart';
+import 'screens/user_login_screen.dart';
 import 'widgets/guards.dart';
 
 void main() async {
@@ -51,7 +52,9 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const LandingScreen(),
-        '/login': (context) => const LoginScreen(),
+        // Connexions
+        '/tenant-login': (context) => const TenantLoginScreen(),
+        '/login': (context) => const UserLoginScreen(),
         '/signup': (context) => const SignupScreen(),
         '/onboarding': (context) => const OnboardingWizardScreen(),
         '/app': (context) => const RootScreen(),

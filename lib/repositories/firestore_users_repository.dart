@@ -37,7 +37,22 @@ class FirestoreUsersRepository implements UsersRepository {
   Future<void> addUser(AppUser user, {required String tenantId}) async {
     final data = user.toMap();
     data['tenantId'] = tenantId;
-    await _firestore.collection(_collection).add(data);
+    // Utiliser le nom comme ID de document (sanitisé). Garantir l'unicité.
+    String baseId = user.name
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_\- ]'), '')
+        .replaceAll(RegExp(r'\s+'), '_');
+    if (baseId.isEmpty) {
+      baseId = 'user';
+    }
+    String docId = baseId;
+    int suffix = 1;
+    while ((await _firestore.collection(_collection).doc(docId).get()).exists) {
+      suffix += 1;
+      docId = '${baseId}_$suffix';
+    }
+    await _firestore.collection(_collection).doc(docId).set(data);
   }
 
   @override
