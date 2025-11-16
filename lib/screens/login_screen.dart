@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
-import '../providers/tenant_provider.dart';
 import '../providers/session_provider.dart';
+import '../providers/tenant_provider.dart';
+import '../services/auth_service.dart';
 import '../services/session_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -14,23 +14,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _codeController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
   String? _errorMessage;
-  int _remainingAttempts = 3;
 
   @override
   void initState() {
     super.initState();
-    _loadRemainingAttempts();
-  }
-
-  Future<void> _loadRemainingAttempts() async {
-    final attempts = await _authService.getRemainingAttempts();
-    setState(() {
-      _remainingAttempts = attempts;
-    });
   }
 
   Future<void> _login() async {
@@ -42,19 +34,22 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final user = await _authService.login(_codeController.text);
+      final user = await _authService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
       if (mounted) {
         Provider.of<TenantProvider>(context, listen: false)
-            .setTenant(tenantId: user.tenantId);
+            .setTenant(tenantId: user['tenantId'] as String);
       }
       if (!mounted) return;
 
       // Créer une session (TTL 2h)
       final session = SessionData(
-        userId: user.id,
-        userName: user.name,
-        tenantId: user.tenantId,
-        isAdmin: user.isAdmin,
+        userId: user['id'] as String,
+        userName: user['name'] as String,
+        tenantId: user['tenantId'] as String,
+        isAdmin: user['isAdmin'] as bool? ?? false,
         expiresAt: DateTime.now().add(const Duration(hours: 2)),
       );
       if (mounted) {
@@ -62,12 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (!mounted) return;
-      await Navigator.pushReplacementNamed(context, user.isAdmin ? '/admin' : '/employee');
+      await Navigator.pushReplacementNamed(
+          context, (user['isAdmin'] as bool? ?? false) ? '/admin' : '/employee');
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
       });
-      await _loadRemainingAttempts();
     } finally {
       if (mounted) {
         setState(() {
@@ -120,16 +115,35 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _codeController,
+                  controller: _emailController,
                   decoration: const InputDecoration(
-                    labelText: 'Code d\'accès',
+                    labelText: 'Email',
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Veuillez entrer votre email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Email invalide';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Mot de passe',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock_outline),
                   ),
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre code d\'accès';
+                      return 'Veuillez entrer votre mot de passe';
                     }
                     return null;
                   },
@@ -145,23 +159,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ],
-                if (_remainingAttempts < 3) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Il vous reste $_remainingAttempts tentative(s)',
-                    style: TextStyle(
-                      color: _remainingAttempts == 0 ? Colors.red : Colors.orange,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 12),
                 const Text(
-                  'Comptes de démonstration:\n- admin : admin123\n- employé : emp123',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  'Comptes de démonstration:\nadmin@demo.io / admin123\nemploye@demo.io / emp123',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -185,7 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _codeController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 } 
