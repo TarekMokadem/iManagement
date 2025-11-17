@@ -44,24 +44,26 @@ class _LandingScreenState extends State<LandingScreen>
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(colorScheme, isMobile),
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                _buildHeroSection(colorScheme, isMobile),
-                _buildSocialProofSection(colorScheme, isMobile),
-                _buildFeaturesSection(colorScheme, isMobile),
-                _buildHowItWorksSection(colorScheme, isMobile),
-                _buildPricingSection(colorScheme, isMobile),
-                _buildFAQSection(colorScheme, isMobile),
-                _buildCTASection(colorScheme, isMobile),
-                _buildFooter(colorScheme, isMobile),
-              ],
+      body: SelectionArea(
+        child: CustomScrollView(
+          slivers: [
+            _buildAppBar(colorScheme, isMobile),
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  _buildHeroSection(colorScheme, isMobile),
+                  _buildSocialProofSection(colorScheme, isMobile),
+                  _buildFeaturesSection(colorScheme, isMobile),
+                  _buildHowItWorksSection(colorScheme, isMobile),
+                  _buildPricingSection(colorScheme, isMobile),
+                  _buildFAQSection(colorScheme, isMobile),
+                  _buildCTASection(colorScheme, isMobile),
+                  _buildFooter(colorScheme, isMobile),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
