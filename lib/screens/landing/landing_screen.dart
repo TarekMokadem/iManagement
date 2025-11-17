@@ -97,7 +97,7 @@ class _LandingScreenState extends State<LandingScreen>
             child: const Text('Tarifs'),
           ),
           TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/login'),
+            onPressed: () => Navigator.pushNamed(context, '/tenant-login'),
             child: const Text('Connexion'),
           ),
           const SizedBox(width: 8),
@@ -245,6 +245,21 @@ class _LandingScreenState extends State<LandingScreen>
                         fontSize: isMobile ? 16 : 18,
                         fontWeight: FontWeight.w600,
                       ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/login'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: colorScheme.onSurface,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 24 : 32,
+                        vertical: 16,
+                      ),
+                    ),
+                    icon: const Icon(Icons.play_circle_outline),
+                    label: const Text(
+                      'Voir la démo',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],

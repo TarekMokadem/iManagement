@@ -95,6 +95,28 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                     child: _isLoading ? const CircularProgressIndicator() : const Text('Se connecter'),
                   ),
                 ),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Comptes de démonstration',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 8),
+                      Text('Admin : admin@demo.io / admin123'),
+                      Text('Employé : employe@demo.io / emp123'),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

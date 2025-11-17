@@ -327,7 +327,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                            onPressed: () => Navigator.pushReplacementNamed(context, '/tenant-login'),
                             child: const Text(
                               'Se connecter',
                               style: TextStyle(fontWeight: FontWeight.w600),
