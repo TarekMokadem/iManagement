@@ -93,6 +93,33 @@ class AuthService {
     };
   }
 
+  /// Connexion dédiée aux comptes tenant/admin
+  Future<Map<String, dynamic>> loginTenant({
+    required String email,
+    required String password,
+  }) async {
+    final user = await login(email: email, password: password);
+    final isAdmin = user['isAdmin'] as bool? ?? false;
+    if (!isAdmin) {
+      throw Exception('Seuls les administrateurs peuvent accéder à cet espace.');
+    }
+
+    final tenantId = user['tenantId'] as String?;
+    if (tenantId == null || tenantId.isEmpty) {
+      throw Exception('Aucun tenant associé à ce compte.');
+    }
+
+    final tenantDoc = await _firestore.collection('tenants').doc(tenantId).get();
+    if (!tenantDoc.exists) {
+      throw Exception('Espace client introuvable pour ce compte.');
+    }
+
+    return {
+      ...user,
+      'tenant': tenantDoc.data(),
+    };
+  }
+
   /// Connexion par code d'accès (utilisateurs de l'application)
   Future<Map<String, dynamic>> loginWithAccessCode(String accessCode) async {
     final snap = await _firestore

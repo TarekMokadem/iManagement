@@ -36,7 +36,7 @@ class _TenantLoginScreenState extends State<TenantLoginScreen> {
       _errorMessage = null;
     });
     try {
-      final user = await _authService.login(
+      final user = await _authService.loginTenant(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -51,7 +51,7 @@ class _TenantLoginScreenState extends State<TenantLoginScreen> {
       );
       await context.read<SessionProvider>().login(session);
       if (!mounted) return;
-      await Navigator.pushReplacementNamed(context, '/admin');
+      await Navigator.pushReplacementNamed(context, '/tenant-dashboard');
     } catch (e) {
       setState(() => _errorMessage = e.toString());
     } finally {
