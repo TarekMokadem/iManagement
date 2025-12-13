@@ -53,6 +53,13 @@ class FirestoreProductsRepository implements ProductsRepository {
     // Optionnel: vérifier le tenant côté client; la règle Firestore fera foi.
     await _firestore.collection(_collection).doc(id).delete();
   }
+
+  @override
+  Future<void> upsertProduct(String id, Product product, {required String tenantId}) async {
+    final data = product.toMap();
+    data['tenantId'] = tenantId;
+    await _firestore.collection(_collection).doc(id).set(data, SetOptions(merge: true));
+  }
 }
 
 

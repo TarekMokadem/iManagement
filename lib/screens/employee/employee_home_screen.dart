@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../login_screen.dart';
 import 'critical_products_screen.dart';
 import 'product_list_screen.dart';
+import 'product_scanner_screen.dart';
 
 class EmployeeHomeScreen extends StatelessWidget {
   final String userId;
@@ -59,10 +60,13 @@ class EmployeeHomeScreen extends StatelessWidget {
             'Scanner un produit',
             Icons.qr_code_scanner,
             () {
-              // TODO: Navigation vers le scanner
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fonctionnalité à venir'),
+              Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => ProductScannerScreen(
+                    userId: userId,
+                    userName: userName,
+                  ),
                 ),
               );
             },

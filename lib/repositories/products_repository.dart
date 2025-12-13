@@ -9,6 +9,10 @@ abstract class ProductsRepository {
   Future<void> addProduct(Product product, {required String tenantId});
   Future<void> updateProduct(String id, Product product, {required String tenantId});
   Future<void> deleteProduct(String id, {required String tenantId});
+
+  /// Upsert (création ou remplacement) d'un produit avec un ID déterministe.
+  /// Utile pour l'annulation d'une suppression.
+  Future<void> upsertProduct(String id, Product product, {required String tenantId});
 }
 
 

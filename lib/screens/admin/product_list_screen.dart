@@ -69,14 +69,20 @@ class ProductListScreen extends StatelessWidget {
                 );
               },
               onDismissed: (direction) {
-                // TODO: Implémenter la suppression
+                final tenantId = tenant.tenantId;
+                if (tenantId == null || tenantId.isEmpty) return;
+                () async {
+                  await repository.deleteProduct(product.id, tenantId: tenantId);
+                }();
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('${product.name} supprimé'),
                     action: SnackBarAction(
                       label: 'Annuler',
-                      onPressed: () {
-                        // TODO: Implémenter l'annulation de la suppression
+                      onPressed: () async {
+                        final restored = product.copyWith(lastUpdated: DateTime.now());
+                        await repository.upsertProduct(product.id, restored, tenantId: tenantId);
                       },
                     ),
                   ),
@@ -106,13 +112,9 @@ class ProductListScreen extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.edit),
                         onPressed: () {
-                          // TODO: Implémenter la modification
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Modification à venir'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
+                          final tenantId = tenant.tenantId;
+                          if (tenantId == null || tenantId.isEmpty) return;
+                          _showEditDialog(context, repository, tenantId, product);
                         },
                       ),
                       if (product.isCritical)
@@ -123,6 +125,96 @@ class ProductListScreen extends StatelessWidget {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showEditDialog(
+    BuildContext context,
+    ProductsRepository repository,
+    String tenantId,
+    Product product,
+  ) {
+    final nameController = TextEditingController(text: product.name);
+    final locationController = TextEditingController(text: product.location);
+    final qtyController = TextEditingController(text: product.quantity.toString());
+    final criticalController = TextEditingController(text: product.criticalThreshold.toString());
+    final formKey = GlobalKey<FormState>();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Modifier le produit'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Nom'),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Nom requis' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: locationController,
+                    decoration: const InputDecoration(labelText: 'Emplacement'),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Emplacement requis' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: qtyController,
+                    decoration: const InputDecoration(labelText: 'Quantité'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => int.tryParse(v ?? '') == null ? 'Nombre invalide' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: criticalController,
+                    decoration: const InputDecoration(labelText: 'Seuil critique'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => int.tryParse(v ?? '') == null ? 'Nombre invalide' : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                nameController.dispose();
+                locationController.dispose();
+                qtyController.dispose();
+                criticalController.dispose();
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (!(formKey.currentState?.validate() ?? false)) return;
+                final updated = product.copyWith(
+                  name: nameController.text.trim(),
+                  location: locationController.text.trim(),
+                  quantity: int.parse(qtyController.text),
+                  criticalThreshold: int.parse(criticalController.text),
+                  lastUpdated: DateTime.now(),
+                );
+                await repository.updateProduct(product.id, updated, tenantId: tenantId);
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+                nameController.dispose();
+                locationController.dispose();
+                qtyController.dispose();
+                criticalController.dispose();
+              },
+              child: const Text('Enregistrer'),
+            ),
+          ],
         );
       },
     );

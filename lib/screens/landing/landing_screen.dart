@@ -12,6 +12,9 @@ class _LandingScreenState extends State<LandingScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _featuresKey = GlobalKey();
+  final GlobalKey _pricingKey = GlobalKey();
 
   @override
   void initState() {
@@ -33,6 +36,7 @@ class _LandingScreenState extends State<LandingScreen>
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -46,6 +50,7 @@ class _LandingScreenState extends State<LandingScreen>
       backgroundColor: colorScheme.surface,
       body: SelectionArea(
         child: CustomScrollView(
+          controller: _scrollController,
           slivers: [
             _buildAppBar(colorScheme, isMobile),
             SliverToBoxAdapter(
@@ -53,9 +58,15 @@ class _LandingScreenState extends State<LandingScreen>
                 children: [
                   _buildHeroSection(colorScheme, isMobile),
                   _buildSocialProofSection(colorScheme, isMobile),
-                  _buildFeaturesSection(colorScheme, isMobile),
+                  KeyedSubtree(
+                    key: _featuresKey,
+                    child: _buildFeaturesSection(colorScheme, isMobile),
+                  ),
                   _buildHowItWorksSection(colorScheme, isMobile),
-                  _buildPricingSection(colorScheme, isMobile),
+                  KeyedSubtree(
+                    key: _pricingKey,
+                    child: _buildPricingSection(colorScheme, isMobile),
+                  ),
                   _buildFAQSection(colorScheme, isMobile),
                   _buildCTASection(colorScheme, isMobile),
                   _buildFooter(colorScheme, isMobile),
@@ -1037,9 +1048,18 @@ class _LandingScreenState extends State<LandingScreen>
   }
 
   void _scrollToSection(String section) {
-    // TODO: Implement smooth scroll to section
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Navigation vers $section')),
+    final BuildContext? targetContext = switch (section) {
+      'features' => _featuresKey.currentContext,
+      'pricing' => _pricingKey.currentContext,
+      _ => null,
+    };
+    if (targetContext == null) return;
+
+    Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(milliseconds: 550),
+      curve: Curves.easeInOutCubic,
+      alignment: 0.05,
     );
   }
 }

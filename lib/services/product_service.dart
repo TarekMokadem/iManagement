@@ -41,6 +41,19 @@ class ProductService {
     await _firestore.collection(_collection).add(data);
   }
 
+  Future<Product?> getProductById(String id) async {
+    if (id.isEmpty) return null;
+    final doc = await _firestore.collection(_collection).doc(id).get();
+    if (!doc.exists) return null;
+    final data = doc.data();
+    if (data == null) return null;
+    final docTenant = data['tenantId'] as String?;
+    if (tenantId != null && tenantId!.isNotEmpty && docTenant != null && docTenant != tenantId) {
+      return null;
+    }
+    return Product.fromMap({...data, 'id': doc.id});
+  }
+
   // Mettre à jour un produit
   Future<void> updateProduct(String id, Product product, {String? tenantId}) async {
     final data = product.toMap();
