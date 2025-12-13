@@ -3,6 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/worker_config.dart';
 import '../../models/billing_invoice.dart';
 import '../../providers/tenant_provider.dart';
 import '../../services/billing_service.dart';
@@ -16,7 +17,7 @@ class BillingScreen extends StatefulWidget {
 }
 
 class _BillingScreenState extends State<BillingScreen> {
-  static const _workerBaseUrl = 'https://imanagement-stripe.mokadem59200.workers.dev';
+  static const _workerBaseUrl = WorkerConfig.baseUrl;
 
   bool _isCreatingCheckout = false;
   bool _isOpeningPortal = false;

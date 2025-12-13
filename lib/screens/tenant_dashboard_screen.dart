@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/session_provider.dart';
 import '../providers/tenant_provider.dart';
-import '../services/tenant_service.dart';
 import '../services/session_service.dart';
+import '../services/tenant_service.dart';
 import 'admin/billing_screen.dart';
 
 class TenantDashboardScreen extends StatelessWidget {
@@ -20,7 +20,7 @@ class TenantDashboardScreen extends StatelessWidget {
 
     await sessionProvider.logout();
     tenantProvider.clearTenant();
-    navigator.pushNamedAndRemoveUntil('/tenant-login', (route) => false);
+    await navigator.pushNamedAndRemoveUntil('/tenant-login', (route) => false);
   }
 
   @override
@@ -352,7 +352,7 @@ class TenantDashboardScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.blueGrey.withOpacity(0.08),
+        color: Colors.blueGrey.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -376,7 +376,9 @@ class TenantDashboardScreen extends StatelessWidget {
       {
         'icon': Icons.file_present_outlined,
         'title': 'Exports',
-        'description': tenant.entitlements['exports'] == 'true' ? 'Exports avancés activés' : 'Inclus dans le plan Pro',
+        'description': (tenant.entitlements['exports'] == true || tenant.entitlements['exports'] == 'true')
+            ? 'Exports avancés activés'
+            : 'Inclus dans le plan Pro',
       },
       {
         'icon': Icons.support_agent_outlined,

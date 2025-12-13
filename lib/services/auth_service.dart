@@ -1,10 +1,14 @@
-import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:crypto/crypto.dart';
+import 'worker_auth_service.dart';
 
 class AuthService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _firebaseAuth;
+  final WorkerAuthService _workerAuthService;
+
+  AuthService({FirebaseAuth? firebaseAuth, WorkerAuthService? workerAuthService})
+      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+        _workerAuthService = workerAuthService ?? WorkerAuthService();
 
   /// Inscription : crée un tenant + user admin
   Future<Map<String, String>> signup({
@@ -13,84 +17,30 @@ class AuthService {
     required String password,
     required String companyName,
   }) async {
-    // Vérifier si l'email existe déjà
-    final existingUsers = await _firestore
-        .collection('users')
-        .where('email', isEqualTo: email.toLowerCase())
-        .get();
-
-    if (existingUsers.docs.isNotEmpty) {
-      throw Exception('Cet email est déjà utilisé');
-    }
-
-    // Créer le tenant
-    final tenantRef = await _firestore.collection('tenants').add({
-      'name': companyName,
-      'plan': 'free',
-      'createdAt': FieldValue.serverTimestamp(),
-      'entitlements': {
-        'maxUsers': 3,
-        'maxProducts': 200,
-        'maxOperationsPerMonth': 1000,
-        'exports': 'false',
-        'support': 'community',
-      },
-      'billingStatus': 'active',
-    });
-
-    final tenantId = tenantRef.id;
-
-    // Hasher le mot de passe
-    final hashedPassword = _hashPassword(password);
-
-    // Créer l'utilisateur admin avec ID = nom
-    final userDocId = _sanitizeId(name);
-    await _firestore.collection('users').doc(userDocId).set({
-      'name': name,
-      'email': email.toLowerCase(),
-      'password': hashedPassword,
-      'tenantId': tenantId,
-      'isAdmin': true,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
+    final firebaseUid = await _ensureFirebaseSignedIn();
+    final result = await _workerAuthService.signup(
+      name: name,
+      email: email.trim().toLowerCase(),
+      password: password,
+      companyName: companyName,
+      firebaseUid: firebaseUid,
+    );
     return {
-      'userId': userDocId,
-      'userName': name,
-      'tenantId': tenantId,
+      'userId': result['userId'] as String,
+      'userName': result['userName'] as String,
+      'tenantId': result['tenantId'] as String,
     };
   }
 
-  /// Connexion : vérifie email + password
-  Future<Map<String, dynamic>> login({
-    required String email,
-    required String password,
-  }) async {
-    final snapshot = await _firestore
-        .collection('users')
-        .where('email', isEqualTo: email.toLowerCase())
-        .limit(1)
-        .get();
-
-    if (snapshot.docs.isEmpty) {
-      throw Exception('Email ou mot de passe incorrect');
+  Future<String> _ensureFirebaseSignedIn() async {
+    final current = _firebaseAuth.currentUser;
+    if (current != null) return current.uid;
+    final cred = await _firebaseAuth.signInAnonymously();
+    final user = cred.user;
+    if (user == null) {
+      throw Exception('Impossible de démarrer une session sécurisée.');
     }
-
-    final userDoc = snapshot.docs.first;
-    final userData = userDoc.data();
-    final storedHash = userData['password'] as String?;
-
-    if (storedHash == null || storedHash != _hashPassword(password)) {
-      throw Exception('Email ou mot de passe incorrect');
-    }
-
-    return {
-      'id': userDoc.id,
-      'name': userData['name'] as String,
-      'email': userData['email'] as String,
-      'tenantId': userData['tenantId'] as String,
-      'isAdmin': userData['isAdmin'] as bool? ?? false,
-    };
+    return user.uid;
   }
 
   /// Connexion dédiée aux comptes tenant/admin
@@ -98,63 +48,20 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final user = await login(email: email, password: password);
-    final isAdmin = user['isAdmin'] as bool? ?? false;
-    if (!isAdmin) {
-      throw Exception('Seuls les administrateurs peuvent accéder à cet espace.');
-    }
-
-    final tenantId = user['tenantId'] as String?;
-    if (tenantId == null || tenantId.isEmpty) {
-      throw Exception('Aucun tenant associé à ce compte.');
-    }
-
-    final tenantDoc = await _firestore.collection('tenants').doc(tenantId).get();
-    if (!tenantDoc.exists) {
-      throw Exception('Espace client introuvable pour ce compte.');
-    }
-
-    return {
-      ...user,
-      'tenant': tenantDoc.data(),
-    };
+    final firebaseUid = await _ensureFirebaseSignedIn();
+    return _workerAuthService.loginTenant(
+      email: email,
+      password: password,
+      firebaseUid: firebaseUid,
+    );
   }
 
   /// Connexion par code d'accès (utilisateurs de l'application)
   Future<Map<String, dynamic>> loginWithAccessCode(String accessCode) async {
-    final snap = await _firestore
-        .collection('users')
-        .where('code', isEqualTo: accessCode)
-        .limit(1)
-        .get();
-
-    if (snap.docs.isEmpty) {
-      throw Exception('Code d’accès invalide');
-    }
-    final doc = snap.docs.first;
-    final data = doc.data();
-    return {
-      'id': doc.id,
-      'name': data['name'] as String,
-      'email': data['email'] as String?,
-      'tenantId': data['tenantId'] as String,
-      'isAdmin': data['isAdmin'] as bool? ?? false,
-    };
-  }
-
-  String _sanitizeId(String input) {
-    return input
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9_\- ]'), '')
-        .replaceAll(RegExp(r'\s+'), '_');
-  }
-
-  /// Hash simple du mot de passe (SHA-256)
-  /// ⚠️ En production, utiliser Firebase Auth ou un système plus robuste
-  String _hashPassword(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+    final firebaseUid = await _ensureFirebaseSignedIn();
+    return _workerAuthService.bootstrapWithAccessCode(
+      accessCode: accessCode,
+      firebaseUid: firebaseUid,
+    );
   }
 }

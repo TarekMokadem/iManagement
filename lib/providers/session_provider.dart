@@ -1,14 +1,18 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/session_service.dart';
 
 class SessionProvider with ChangeNotifier {
   final SessionService _service;
+  final FirebaseAuth _firebaseAuth;
   SessionData? _session;
   bool _isLoading = true;
   Future<void>? _loadingFuture;
 
-  SessionProvider({SessionService? service}) : _service = service ?? SessionService() {
+  SessionProvider({SessionService? service, FirebaseAuth? firebaseAuth})
+      : _service = service ?? SessionService(),
+        _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance {
     _loadingFuture = _performLoad();
   }
 
@@ -59,6 +63,7 @@ class SessionProvider with ChangeNotifier {
     _session = null;
     _isLoading = false;
     await _service.clear();
+    await _firebaseAuth.signOut();
     notifyListeners();
   }
 }

@@ -113,9 +113,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                   ),
-                  child: Column(
+                  child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'Comptes de démonstration',
                         style: TextStyle(fontWeight: FontWeight.w600),

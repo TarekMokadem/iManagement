@@ -17,8 +17,8 @@ import 'screens/landing/landing_screen.dart';
 import 'screens/onboarding/onboarding_wizard_screen.dart';
 import 'screens/root_screen.dart';
 import 'screens/signup/signup_screen.dart';
-import 'screens/tenant_login_screen.dart';
 import 'screens/tenant_dashboard_screen.dart';
+import 'screens/tenant_login_screen.dart';
 import 'screens/user_login_screen.dart';
 import 'widgets/guards.dart';
 

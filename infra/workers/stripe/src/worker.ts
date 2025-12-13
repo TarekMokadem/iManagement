@@ -56,6 +56,11 @@ type FirestoreValue =
 
 let cachedAccessToken: { token: string; expiry: number } | null = null;
 
+type FirestoreDocument = {
+  name?: string;
+  fields?: Record<string, FirestoreValue>;
+};
+
 function normalizePrivateKey(pem: string): string {
   return pem.replace(/\\n/g, '\n');
 }
@@ -153,6 +158,34 @@ async function getAccessToken(env: Env): Promise<string> {
   return json.access_token;
 }
 
+function getStringField(fields: Record<string, FirestoreValue> | undefined, key: string): string | undefined {
+  const v = fields?.[key];
+  if (!v) return undefined;
+  if ('stringValue' in v) return v.stringValue;
+  return undefined;
+}
+
+function getBoolField(fields: Record<string, FirestoreValue> | undefined, key: string): boolean | undefined {
+  const v = fields?.[key];
+  if (!v) return undefined;
+  if ('booleanValue' in v) return v.booleanValue;
+  return undefined;
+}
+
+function getDocumentId(docName: string | undefined): string | undefined {
+  if (!docName) return undefined;
+  const parts = docName.split('/');
+  return parts[parts.length - 1];
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  const hash = await crypto.subtle.digest('SHA-256', encoder.encode(text));
+  const bytes = new Uint8Array(hash);
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 function toFirestoreValue(value: unknown): FirestoreValue {
   if (value === null) {
     return { nullValue: null };
@@ -192,6 +225,94 @@ function encodeFirestoreFields(data: Record<string, unknown>): Record<string, Fi
     entries.push([key, toFirestoreValue(value)]);
   }
   return Object.fromEntries(entries);
+}
+
+async function runQuerySingle(
+  env: Env,
+  collectionId: string,
+  fieldPath: string,
+  value: FirestoreValue,
+): Promise<FirestoreDocument | null> {
+  const token = await getAccessToken(env);
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath },
+              op: 'EQUAL',
+              value,
+            },
+          },
+          limit: 1,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('runQuerySingle error:', text);
+    return null;
+  }
+
+  const results = (await response.json()) as Array<{ document?: FirestoreDocument }>;
+  for (const result of results) {
+    if (result.document) return result.document;
+  }
+  return null;
+}
+
+async function upsertDocument(
+  env: Env,
+  collectionId: string,
+  documentId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const token = await getAccessToken(env);
+  const baseUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${collectionId}/${documentId}`;
+
+  const payloadFields = encodeFirestoreFields(data);
+  const url = new URL(baseUrl);
+  for (const key of Object.keys(data)) {
+    url.searchParams.append('updateMask.fieldPaths', key);
+  }
+
+  let response = await fetch(url.toString(), {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ fields: payloadFields }),
+  });
+
+  if (response.status === 404) {
+    response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${collectionId}?documentId=${documentId}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fields: payloadFields }),
+      }
+    );
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`upsertDocument(${collectionId}/${documentId}) failed: ${response.status} ${text}`);
+  }
 }
 
 async function updateTenantDocument(env: Env, tenantId: string, data: Record<string, unknown>): Promise<void> {
@@ -283,6 +404,37 @@ async function findTenantIdByStripeCustomer(env: Env, customerId: string | undef
     }
   }
   return null;
+}
+
+async function ensureMembership(env: Env, firebaseUid: string, tenantId: string, role: string, userId?: string) {
+  const membershipId = `${firebaseUid}_${tenantId}`;
+  await upsertDocument(env, 'memberships', membershipId, {
+    firebaseUid,
+    tenantId,
+    role,
+    userId: userId ?? null,
+    createdAt: new Date(),
+  });
+}
+
+function sanitizeId(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_\- ]/gu, '')
+    .replace(/\s+/gu, '_');
+}
+
+async function getDocument(env: Env, collectionId: string, documentId: string): Promise<FirestoreDocument | null> {
+  const token = await getAccessToken(env);
+  const url = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${collectionId}/${documentId}`;
+  const resp = await fetch(url, { method: 'GET', headers: { Authorization: `Bearer ${token}` } });
+  if (resp.status === 404) return null;
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`getDocument(${collectionId}/${documentId}) failed: ${resp.status} ${text}`);
+  }
+  return (await resp.json()) as FirestoreDocument;
 }
 
 function getStripeId(value: unknown): string | undefined {
@@ -564,6 +716,161 @@ export default {
       } catch (error) {
         console.error('Webhook processing error:', error);
         return new Response('Webhook error', { status: 500, headers: { ...corsHeaders } });
+      }
+    }
+
+    // Auth bootstrap (Firebase Auth anonyme + membership)
+    if (request.method === 'POST' && url.pathname === '/auth/bootstrap') {
+      try {
+        const body: any = await request.json().catch(() => ({}));
+        const accessCode = typeof body.accessCode === 'string' ? body.accessCode.trim() : '';
+        const firebaseUid = typeof body.firebaseUid === 'string' ? body.firebaseUid.trim() : '';
+        if (!accessCode || !firebaseUid) {
+          return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
+        }
+
+        const userDoc = await runQuerySingle(env, 'users', 'code', { stringValue: accessCode });
+        if (!userDoc?.fields) {
+          return new Response('Code d’accès invalide', { status: 401, headers: { ...corsHeaders } });
+        }
+
+        const tenantId = getStringField(userDoc.fields, 'tenantId');
+        const name = getStringField(userDoc.fields, 'name') ?? 'Utilisateur';
+        const email = getStringField(userDoc.fields, 'email');
+        const isAdmin = getBoolField(userDoc.fields, 'isAdmin') ?? false;
+        const userId = getDocumentId(userDoc.name);
+
+        if (!tenantId) {
+          return new Response('Utilisateur sans tenant', { status: 409, headers: { ...corsHeaders } });
+        }
+
+        await ensureMembership(env, firebaseUid, tenantId, isAdmin ? 'admin' : 'employee', userId);
+
+        return new Response(
+          JSON.stringify({ id: userId, name, email, tenantId, isAdmin }),
+          { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      } catch (error) {
+        console.error('auth/bootstrap error:', error);
+        return new Response('Erreur auth', { status: 500, headers: { ...corsHeaders } });
+      }
+    }
+
+    // Auth tenant (email/mdp custom + membership)
+    if (request.method === 'POST' && url.pathname === '/auth/tenant-login') {
+      try {
+        const body: any = await request.json().catch(() => ({}));
+        const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+        const password = typeof body.password === 'string' ? body.password : '';
+        const firebaseUid = typeof body.firebaseUid === 'string' ? body.firebaseUid.trim() : '';
+        if (!email || !password || !firebaseUid) {
+          return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
+        }
+
+        const userDoc = await runQuerySingle(env, 'users', 'email', { stringValue: email });
+        if (!userDoc?.fields) {
+          return new Response('Email ou mot de passe incorrect', { status: 401, headers: { ...corsHeaders } });
+        }
+
+        const storedHash = getStringField(userDoc.fields, 'password');
+        const computedHash = await sha256Hex(password);
+        if (!storedHash || storedHash !== computedHash) {
+          return new Response('Email ou mot de passe incorrect', { status: 401, headers: { ...corsHeaders } });
+        }
+
+        const isAdmin = getBoolField(userDoc.fields, 'isAdmin') ?? false;
+        if (!isAdmin) {
+          return new Response('Seuls les administrateurs peuvent accéder à cet espace.', { status: 403, headers: { ...corsHeaders } });
+        }
+
+        const tenantId = getStringField(userDoc.fields, 'tenantId');
+        const name = getStringField(userDoc.fields, 'name') ?? 'Admin';
+        const userId = getDocumentId(userDoc.name);
+
+        if (!tenantId) {
+          return new Response('Aucun tenant associé à ce compte.', { status: 409, headers: { ...corsHeaders } });
+        }
+
+        await ensureMembership(env, firebaseUid, tenantId, 'admin', userId);
+
+        return new Response(
+          JSON.stringify({ id: userId, name, email, tenantId, isAdmin: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      } catch (error) {
+        console.error('auth/tenant-login error:', error);
+        return new Response('Erreur auth', { status: 500, headers: { ...corsHeaders } });
+      }
+    }
+
+    // Signup tenant (création tenant + admin user + membership)
+    if (request.method === 'POST' && url.pathname === '/auth/signup') {
+      try {
+        const body: any = await request.json().catch(() => ({}));
+        const name = typeof body.name === 'string' ? body.name.trim() : '';
+        const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+        const password = typeof body.password === 'string' ? body.password : '';
+        const companyName = typeof body.companyName === 'string' ? body.companyName.trim() : '';
+        const firebaseUid = typeof body.firebaseUid === 'string' ? body.firebaseUid.trim() : '';
+        if (!name || !email || !password || !companyName || !firebaseUid) {
+          return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
+        }
+
+        const emailExisting = await runQuerySingle(env, 'users', 'email', { stringValue: email });
+        if (emailExisting?.fields) {
+          return new Response('Cet email est déjà utilisé', { status: 409, headers: { ...corsHeaders } });
+        }
+
+        const tenantId = sanitizeId(companyName);
+        if (!tenantId) {
+          return new Response('Nom de société invalide', { status: 400, headers: { ...corsHeaders } });
+        }
+        const existingTenant = await getDocument(env, 'tenants', tenantId);
+        if (existingTenant) {
+          return new Response('Ce tenant existe déjà', { status: 409, headers: { ...corsHeaders } });
+        }
+
+        // Tenant doc
+        await upsertDocument(env, 'tenants', tenantId, {
+          name: companyName,
+          plan: 'free',
+          createdAt: new Date(),
+          entitlements: {
+            maxUsers: 3,
+            maxProducts: 200,
+            maxOperationsPerMonth: 1000,
+            exports: false,
+            support: 'community',
+          },
+          billingStatus: 'active',
+        });
+
+        // User doc (ID basé sur le nom, avec fallback si collision)
+        let userDocId = sanitizeId(name);
+        if (!userDocId) userDocId = `user_${Date.now()}`;
+        let collision = await getDocument(env, 'users', userDocId);
+        if (collision) {
+          userDocId = `${userDocId}_${Math.floor(Math.random() * 10000)}`;
+        }
+
+        await upsertDocument(env, 'users', userDocId, {
+          name,
+          email,
+          password: await sha256Hex(password),
+          tenantId,
+          isAdmin: true,
+          createdAt: new Date(),
+        });
+
+        await ensureMembership(env, firebaseUid, tenantId, 'admin', userDocId);
+
+        return new Response(
+          JSON.stringify({ userId: userDocId, userName: name, tenantId }),
+          { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      } catch (error) {
+        console.error('auth/signup error:', error);
+        return new Response('Erreur inscription', { status: 500, headers: { ...corsHeaders } });
       }
     }
 
