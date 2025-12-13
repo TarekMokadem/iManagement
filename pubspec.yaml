@@ -39,6 +39,9 @@ dev_dependencies:
   fake_cloud_firestore: ^4.0.0
   firebase_auth_mocks: ^0.15.0
 
+dependency_overrides:
+  vector_math: ^2.2.0
+
 flutter:
   uses-material-design: true
   generate: true 
