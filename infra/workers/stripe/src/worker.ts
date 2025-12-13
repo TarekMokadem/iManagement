@@ -775,7 +775,14 @@ export default {
         const storedHash = getStringField(userDoc.fields, 'password');
         const computedHash = await sha256Hex(password);
         if (!storedHash || storedHash !== computedHash) {
-          return new Response('Email ou mot de passe incorrect', { status: 401, headers: { ...corsHeaders } });
+          // Compat: seed démo (si le compte a été créé avec un hash erroné, on le corrige automatiquement)
+          const userId = getDocumentId(userDoc.name);
+          const isDemoAdmin = email === 'admin@demo.io' && password === 'admin123' && Boolean(userId);
+          if (isDemoAdmin && userId) {
+            await upsertDocument(env, 'users', userId, { password: computedHash });
+          } else {
+            return new Response('Email ou mot de passe incorrect', { status: 401, headers: { ...corsHeaders } });
+          }
         }
 
         const isAdmin = getBoolField(userDoc.fields, 'isAdmin') ?? false;
