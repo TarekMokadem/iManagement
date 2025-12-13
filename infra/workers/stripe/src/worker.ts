@@ -702,6 +702,39 @@ export default {
       return new Response(null, { status: 204, headers: { ...corsHeaders } });
     }
 
+    if (request.method === 'POST' && url.pathname === '/tenant/update-profile') {
+      try {
+        const body: any = await request.json().catch(() => ({}));
+        const tenantId = typeof body.tenantId === 'string' ? body.tenantId.trim() : '';
+        const firebaseUid = typeof body.firebaseUid === 'string' ? body.firebaseUid.trim() : '';
+        const name = typeof body.name === 'string' ? body.name.trim() : undefined;
+        const contactEmail = typeof body.contactEmail === 'string' ? body.contactEmail.trim().toLowerCase() : undefined;
+
+        if (!tenantId || !firebaseUid) {
+          return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
+        }
+
+        const membershipId = `${firebaseUid}_${tenantId}`;
+        const membership = await getDocument(env, 'memberships', membershipId);
+        const role = getStringField(membership?.fields, 'role');
+        if (!membership?.fields || role !== 'admin') {
+          return new Response('Accès refusé', { status: 403, headers: { ...corsHeaders } });
+        }
+
+        const updates: Record<string, unknown> = {
+          updatedAt: new Date(),
+        };
+        if (name && name.length) updates.name = name;
+        if (contactEmail && contactEmail.length) updates.contactEmail = contactEmail;
+
+        await updateTenantDocument(env, tenantId, updates);
+        return new Response('ok', { status: 200, headers: { ...corsHeaders } });
+      } catch (error) {
+        console.error('tenant/update-profile error:', error);
+        return new Response('Erreur mise à jour', { status: 500, headers: { ...corsHeaders } });
+      }
+    }
+
     if (request.method === 'POST' && url.pathname === '/stripe/webhook') {
       const payloadText = await request.text();
       const valid = await verifyStripeSignature(env, request, payloadText);

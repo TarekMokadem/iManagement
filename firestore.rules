@@ -10,6 +10,12 @@ service cloud.firestore {
       );
     }
 
+    function isAdminOfTenant(tenantId) {
+      return hasAuth() &&
+        exists(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId)) &&
+        get(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId)).data.role == 'admin';
+    }
+
     // Helper to read the tenantId from the resource (for read/update/delete)
     function resourceTenantId() {
       return resource.data.tenantId;
@@ -35,10 +41,10 @@ service cloud.firestore {
     // Utilisateurs (collection applicative, pas Firebase Auth)
     match /users/{docId} {
       allow get, list: if hasAuth() && isMemberOfTenant(resourceTenantId());
-      allow create: if hasAuth() && isMemberOfTenant(requestTenantId());
-      allow update: if hasAuth() && isMemberOfTenant(resourceTenantId()) &&
+      allow create: if hasAuth() && isAdminOfTenant(requestTenantId());
+      allow update: if hasAuth() && isAdminOfTenant(resourceTenantId()) &&
         requestTenantId() == resourceTenantId();
-      allow delete: if hasAuth() && isMemberOfTenant(resourceTenantId());
+      allow delete: if hasAuth() && isAdminOfTenant(resourceTenantId());
     }
 
     // Opérations (journal)

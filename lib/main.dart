@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const LandingScreen(),
         // Connexions
         '/tenant-login': (context) => const TenantLoginScreen(),
-        '/tenant-dashboard': (context) => TenantDashboardScreen(),
+        '/tenant-dashboard': (context) => const TenantDashboardScreen(),
         '/login': (context) => const UserLoginScreen(),
         '/signup': (context) => const SignupScreen(),
         '/onboarding': (context) => const OnboardingWizardScreen(),
