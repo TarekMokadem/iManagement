@@ -1,10 +1,9 @@
 import 'dart:convert';
 
+import 'package:app_invv1/services/worker_auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-
-import 'package:app_invv1/services/worker_auth_service.dart';
 
 void main() {
   group('WorkerAuthService', () {

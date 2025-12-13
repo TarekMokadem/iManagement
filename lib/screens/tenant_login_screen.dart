@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../debug/remote_logger.dart';
 import '../providers/session_provider.dart';
 import '../providers/tenant_provider.dart';
 import '../services/auth_service.dart';
@@ -36,11 +37,31 @@ class _TenantLoginScreenState extends State<TenantLoginScreen> {
       _errorMessage = null;
     });
     try {
+      RemoteLogger.log(
+        hypothesisId: 'H3',
+        location: 'lib/screens/tenant_login_screen.dart:_login',
+        message: 'tenant login submit',
+        data: {
+          'emailDomain': _emailController.text.contains('@')
+              ? _emailController.text.trim().split('@').last
+              : 'invalid',
+          'passwordLen': _passwordController.text.length,
+        },
+      );
       final user = await _authService.loginTenant(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
       if (!mounted) return;
+      RemoteLogger.log(
+        hypothesisId: 'H1',
+        location: 'lib/screens/tenant_login_screen.dart:_login',
+        message: 'tenant login success',
+        data: {
+          'tenantIdPresent': (user['tenantId'] as String?)?.isNotEmpty ?? false,
+          'isAdmin': user['isAdmin'] == true,
+        },
+      );
       context.read<TenantProvider>().setTenant(tenantId: user['tenantId'] as String);
       final session = SessionData(
         userId: user['id'] as String,
@@ -53,6 +74,15 @@ class _TenantLoginScreenState extends State<TenantLoginScreen> {
       if (!mounted) return;
       await Navigator.pushReplacementNamed(context, '/tenant-dashboard');
     } catch (e) {
+      RemoteLogger.log(
+        hypothesisId: 'H1',
+        location: 'lib/screens/tenant_login_screen.dart:_login',
+        message: 'tenant login error',
+        data: {
+          'errorType': e.runtimeType.toString(),
+          'errorMsgPrefix': e.toString().length > 120 ? e.toString().substring(0, 120) : e.toString(),
+        },
+      );
       setState(() => _errorMessage = e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);

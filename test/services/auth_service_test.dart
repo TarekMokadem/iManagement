@@ -1,8 +1,7 @@
-import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:app_invv1/services/auth_service.dart';
 import 'package:app_invv1/services/worker_auth_service.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 class _FakeWorkerAuthService extends WorkerAuthService {
   _FakeWorkerAuthService();

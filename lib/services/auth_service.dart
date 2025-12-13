@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../debug/remote_logger.dart';
 import 'worker_auth_service.dart';
 
 class AuthService {
@@ -34,12 +35,40 @@ class AuthService {
 
   Future<String> _ensureFirebaseSignedIn() async {
     final current = _firebaseAuth.currentUser;
-    if (current != null) return current.uid;
+    if (current != null) {
+      RemoteLogger.log(
+        hypothesisId: 'H4',
+        location: 'lib/services/auth_service.dart:_ensureFirebaseSignedIn',
+        message: 'firebase user already signed in',
+        data: {
+          'uidPrefix': current.uid.length >= 6 ? current.uid.substring(0, 6) : current.uid,
+          'uidLen': current.uid.length,
+          'isAnonymous': current.isAnonymous,
+        },
+      );
+      return current.uid;
+    }
+    RemoteLogger.log(
+      hypothesisId: 'H4',
+      location: 'lib/services/auth_service.dart:_ensureFirebaseSignedIn',
+      message: 'signInAnonymously start',
+      data: const {},
+    );
     final cred = await _firebaseAuth.signInAnonymously();
     final user = cred.user;
     if (user == null) {
       throw Exception('Impossible de démarrer une session sécurisée.');
     }
+    RemoteLogger.log(
+      hypothesisId: 'H4',
+      location: 'lib/services/auth_service.dart:_ensureFirebaseSignedIn',
+      message: 'signInAnonymously ok',
+      data: {
+        'uidPrefix': user.uid.length >= 6 ? user.uid.substring(0, 6) : user.uid,
+        'uidLen': user.uid.length,
+        'isAnonymous': user.isAnonymous,
+      },
+    );
     return user.uid;
   }
 
