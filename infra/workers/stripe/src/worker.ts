@@ -913,10 +913,15 @@ export default {
         try {
           existingTenant = await getDocument(env, 'tenants', tenantId);
         } catch (e: any) {
+          const errMsg = String(e?.message ?? e);
           // #region agent log
-          console.log('[auth/signup] tenant_check_failed', { err: String(e?.message ?? e).slice(0, 160) });
+          console.log('[auth/signup] tenant_check_failed', { err: errMsg.slice(0, 200) });
           // #endregion
-          return new Response('Erreur inscription (tenant_check)', { status: 500, headers: { ...corsHeaders } });
+          // Retourne une version tronquée de l'erreur pour debug (pas de secrets, pas de tokens).
+          return new Response(`Erreur inscription (tenant_check): ${errMsg.slice(0, 200)}`, {
+            status: 500,
+            headers: { ...corsHeaders },
+          });
         }
         if (existingTenant) {
           // #region agent log
