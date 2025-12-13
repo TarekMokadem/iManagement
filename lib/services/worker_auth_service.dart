@@ -6,15 +6,18 @@ import '../config/worker_config.dart';
 
 class WorkerAuthService {
   final String baseUrl;
+  final http.Client _client;
 
-  WorkerAuthService({String? baseUrl}) : baseUrl = baseUrl ?? WorkerConfig.baseUrl;
+  WorkerAuthService({String? baseUrl, http.Client? client})
+      : baseUrl = baseUrl ?? WorkerConfig.baseUrl,
+        _client = client ?? http.Client();
 
   Future<Map<String, dynamic>> bootstrapWithAccessCode({
     required String accessCode,
     required String firebaseUid,
   }) async {
     final url = Uri.parse('$baseUrl/auth/bootstrap');
-    final resp = await http.post(
+    final resp = await _client.post(
       url,
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -35,7 +38,7 @@ class WorkerAuthService {
     required String firebaseUid,
   }) async {
     final url = Uri.parse('$baseUrl/auth/tenant-login');
-    final resp = await http.post(
+    final resp = await _client.post(
       url,
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -59,7 +62,7 @@ class WorkerAuthService {
     required String firebaseUid,
   }) async {
     final url = Uri.parse('$baseUrl/auth/signup');
-    final resp = await http.post(
+    final resp = await _client.post(
       url,
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
