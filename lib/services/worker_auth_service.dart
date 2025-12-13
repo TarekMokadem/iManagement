@@ -118,6 +118,21 @@ class WorkerAuthService {
     required String firebaseUid,
   }) async {
     final url = Uri.parse('$baseUrl/auth/signup');
+    RemoteLogger.log(
+      hypothesisId: 'H1',
+      location: 'lib/services/worker_auth_service.dart:signup',
+      message: 'POST auth signup',
+      data: {
+        'baseUrl': baseUrl,
+        'path': url.path,
+        'emailDomain': email.contains('@') ? email.split('@').last : 'invalid',
+        'companyNameLen': companyName.length,
+        'nameLen': name.length,
+        'firebaseUidPrefix': firebaseUid.length >= 6 ? firebaseUid.substring(0, 6) : firebaseUid,
+        'firebaseUidLen': firebaseUid.length,
+        'passwordLen': password.length,
+      },
+    );
     final resp = await _client.post(
       url,
       headers: const {'Content-Type': 'application/json'},
@@ -131,8 +146,23 @@ class WorkerAuthService {
     );
 
     if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      RemoteLogger.log(
+        hypothesisId: 'H1',
+        location: 'lib/services/worker_auth_service.dart:signup',
+        message: 'auth signup success',
+        data: {'status': resp.statusCode},
+      );
       return jsonDecode(resp.body) as Map<String, dynamic>;
     }
+    RemoteLogger.log(
+      hypothesisId: 'H1',
+      location: 'lib/services/worker_auth_service.dart:signup',
+      message: 'auth signup failed',
+      data: {
+        'status': resp.statusCode,
+        'bodyPrefix': resp.body.length > 160 ? resp.body.substring(0, 160) : resp.body,
+      },
+    );
     throw Exception(resp.body.isNotEmpty ? resp.body : 'Erreur inscription (${resp.statusCode})');
   }
 }
