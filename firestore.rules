@@ -56,7 +56,7 @@ service cloud.firestore {
 
     // Memberships: lecture limitée à soi ou à l'admin outillé
     match /memberships/{docId} {
-      allow read: if hasAuth() && docId.startsWith(request.auth.uid + '_');
+      allow read: if hasAuth() && docId.matches('^' + request.auth.uid + '_.*$');
       allow write: if false; // géré côté scripts / back-office uniquement
     }
   }
