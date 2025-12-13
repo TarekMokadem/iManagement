@@ -886,7 +886,15 @@ export default {
           return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
         }
 
-        const emailExisting = await runQuerySingle(env, 'users', 'email', { stringValue: email });
+        let emailExisting: FirestoreDocument | null = null;
+        try {
+          emailExisting = await runQuerySingle(env, 'users', 'email', { stringValue: email });
+        } catch (e: any) {
+          // #region agent log
+          console.log('[auth/signup] email_check_failed', { err: String(e?.message ?? e).slice(0, 160) });
+          // #endregion
+          return new Response('Erreur inscription (email_check)', { status: 500, headers: { ...corsHeaders } });
+        }
         if (emailExisting?.fields) {
           // #region agent log
           console.log('[auth/signup] email_exists');
@@ -901,7 +909,15 @@ export default {
           // #endregion
           return new Response('Nom de société invalide', { status: 400, headers: { ...corsHeaders } });
         }
-        const existingTenant = await getDocument(env, 'tenants', tenantId);
+        let existingTenant: FirestoreDocument | null = null;
+        try {
+          existingTenant = await getDocument(env, 'tenants', tenantId);
+        } catch (e: any) {
+          // #region agent log
+          console.log('[auth/signup] tenant_check_failed', { err: String(e?.message ?? e).slice(0, 160) });
+          // #endregion
+          return new Response('Erreur inscription (tenant_check)', { status: 500, headers: { ...corsHeaders } });
+        }
         if (existingTenant) {
           // #region agent log
           console.log('[auth/signup] tenant_exists', { tenantId });
@@ -934,9 +950,16 @@ export default {
         // User doc (ID basé sur le nom, avec fallback si collision)
         let userDocId = sanitizeId(name);
         if (!userDocId) userDocId = `user_${Date.now()}`;
-        let collision = await getDocument(env, 'users', userDocId);
-        if (collision) {
-          userDocId = `${userDocId}_${Math.floor(Math.random() * 10000)}`;
+        try {
+          const collision = await getDocument(env, 'users', userDocId);
+          if (collision) {
+            userDocId = `${userDocId}_${Math.floor(Math.random() * 10000)}`;
+          }
+        } catch (e: any) {
+          // #region agent log
+          console.log('[auth/signup] user_collision_check_failed', { err: String(e?.message ?? e).slice(0, 160) });
+          // #endregion
+          return new Response('Erreur inscription (user_check)', { status: 500, headers: { ...corsHeaders } });
         }
 
         try {
