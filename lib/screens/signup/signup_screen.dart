@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../debug/remote_logger.dart';
 import '../../providers/session_provider.dart';
 import '../../providers/tenant_provider.dart';
 import '../../services/auth_service.dart';
@@ -50,19 +49,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       final authService = AuthService();
-      RemoteLogger.log(
-        hypothesisId: 'H1',
-        location: 'lib/screens/signup/signup_screen.dart:_handleSignup',
-        message: 'signup submit',
-        data: {
-          'emailDomain': _emailController.text.contains('@')
-              ? _emailController.text.trim().split('@').last
-              : 'invalid',
-          'companyLen': _companyController.text.trim().length,
-          'nameLen': _nameController.text.trim().length,
-          'passwordLen': _passwordController.text.length,
-        },
-      );
       
       // Créer le tenant + user admin
       final result = await authService.signup(
@@ -95,15 +81,6 @@ class _SignupScreenState extends State<SignupScreen> {
       await Navigator.pushReplacementNamed(context, '/onboarding');
     } catch (e) {
       if (!mounted) return;
-      RemoteLogger.log(
-        hypothesisId: 'H1',
-        location: 'lib/screens/signup/signup_screen.dart:_handleSignup',
-        message: 'signup error',
-        data: {
-          'errorType': e.runtimeType.toString(),
-          'errorMsgPrefix': e.toString().length > 200 ? e.toString().substring(0, 200) : e.toString(),
-        },
-      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de l\'inscription: $e'),

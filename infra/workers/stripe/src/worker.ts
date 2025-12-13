@@ -763,31 +763,12 @@ export default {
         const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
         const password = typeof body.password === 'string' ? body.password : '';
         const firebaseUid = typeof body.firebaseUid === 'string' ? body.firebaseUid.trim() : '';
-        // #region agent log
-        console.log('[auth/tenant-login] start', {
-          projectId: env.FIREBASE_PROJECT_ID ?? null,
-          emailDomain: email.includes('@') ? email.split('@')[1] : 'invalid',
-          emailLen: email.length,
-          passwordLen: password.length,
-          firebaseUidLen: firebaseUid.length,
-        });
-        // #endregion
         if (!email || !password || !firebaseUid) {
-          // #region agent log
-          console.log('[auth/tenant-login] missing_params', {
-            hasEmail: Boolean(email),
-            hasPassword: Boolean(password),
-            hasFirebaseUid: Boolean(firebaseUid),
-          });
-          // #endregion
           return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
         }
 
         const userDoc = await runQuerySingle(env, 'users', 'email', { stringValue: email });
         if (!userDoc?.fields) {
-          // #region agent log
-          console.log('[auth/tenant-login] user_not_found');
-          // #endregion
           return new Response('Email ou mot de passe incorrect', { status: 401, headers: { ...corsHeaders } });
         }
 
@@ -797,23 +778,8 @@ export default {
           // Compat: seed démo (si le compte a été créé avec un hash erroné, on le corrige automatiquement)
           const userId = getDocumentId(userDoc.name);
           const isDemoAdmin = email === 'admin@demo.io' && password === 'admin123' && Boolean(userId);
-          // #region agent log
-          console.log('[auth/tenant-login] hash_mismatch', {
-            hasStoredHash: Boolean(storedHash),
-            storedHashPrefix: storedHash ? storedHash.slice(0, 8) : null,
-            computedHashPrefix: computedHash.slice(0, 8),
-            userIdPresent: Boolean(userId),
-            isDemoAdmin,
-          });
-          // #endregion
           if (isDemoAdmin && userId) {
-            // #region agent log
-            console.log('[auth/tenant-login] demo_hash_repair_attempt', { userId });
-            // #endregion
             await upsertDocument(env, 'users', userId, { password: computedHash });
-            // #region agent log
-            console.log('[auth/tenant-login] demo_hash_repair_ok', { userId });
-            // #endregion
           } else {
             return new Response('Email ou mot de passe incorrect', { status: 401, headers: { ...corsHeaders } });
           }
@@ -821,9 +787,6 @@ export default {
 
         const isAdmin = getBoolField(userDoc.fields, 'isAdmin') ?? false;
         if (!isAdmin) {
-          // #region agent log
-          console.log('[auth/tenant-login] not_admin');
-          // #endregion
           return new Response('Seuls les administrateurs peuvent accéder à cet espace.', { status: 403, headers: { ...corsHeaders } });
         }
 
@@ -832,17 +795,11 @@ export default {
         const userId = getDocumentId(userDoc.name);
 
         if (!tenantId) {
-          // #region agent log
-          console.log('[auth/tenant-login] missing_tenant');
-          // #endregion
           return new Response('Aucun tenant associé à ce compte.', { status: 409, headers: { ...corsHeaders } });
         }
 
         await ensureMembership(env, firebaseUid, tenantId, 'admin', userId);
 
-        // #region agent log
-        console.log('[auth/tenant-login] success', { tenantIdLen: tenantId.length, userIdPresent: Boolean(userId) });
-        // #endregion
         return new Response(
           JSON.stringify({ id: userId, name, email, tenantId, isAdmin: true }),
           { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
@@ -862,27 +819,7 @@ export default {
         const password = typeof body.password === 'string' ? body.password : '';
         const companyName = typeof body.companyName === 'string' ? body.companyName.trim() : '';
         const firebaseUid = typeof body.firebaseUid === 'string' ? body.firebaseUid.trim() : '';
-        // #region agent log
-        console.log('[auth/signup] start', {
-          projectId: env.FIREBASE_PROJECT_ID ?? null,
-          emailDomain: email.includes('@') ? email.split('@')[1] : 'invalid',
-          emailLen: email.length,
-          nameLen: name.length,
-          companyLen: companyName.length,
-          passwordLen: password.length,
-          firebaseUidLen: firebaseUid.length,
-        });
-        // #endregion
         if (!name || !email || !password || !companyName || !firebaseUid) {
-          // #region agent log
-          console.log('[auth/signup] missing_params', {
-            hasName: Boolean(name),
-            hasEmail: Boolean(email),
-            hasPassword: Boolean(password),
-            hasCompanyName: Boolean(companyName),
-            hasFirebaseUid: Boolean(firebaseUid),
-          });
-          // #endregion
           return new Response('Paramètres manquants', { status: 400, headers: { ...corsHeaders } });
         }
 
@@ -890,43 +827,23 @@ export default {
         try {
           emailExisting = await runQuerySingle(env, 'users', 'email', { stringValue: email });
         } catch (e: any) {
-          // #region agent log
-          console.log('[auth/signup] email_check_failed', { err: String(e?.message ?? e).slice(0, 160) });
-          // #endregion
           return new Response('Erreur inscription (email_check)', { status: 500, headers: { ...corsHeaders } });
         }
         if (emailExisting?.fields) {
-          // #region agent log
-          console.log('[auth/signup] email_exists');
-          // #endregion
           return new Response('Cet email est déjà utilisé', { status: 409, headers: { ...corsHeaders } });
         }
 
         const tenantId = sanitizeId(companyName);
         if (!tenantId) {
-          // #region agent log
-          console.log('[auth/signup] invalid_company_name');
-          // #endregion
           return new Response('Nom de société invalide', { status: 400, headers: { ...corsHeaders } });
         }
         let existingTenant: FirestoreDocument | null = null;
         try {
           existingTenant = await getDocument(env, 'tenants', tenantId);
         } catch (e: any) {
-          const errMsg = String(e?.message ?? e);
-          // #region agent log
-          console.log('[auth/signup] tenant_check_failed', { err: errMsg.slice(0, 200) });
-          // #endregion
-          // Retourne une version tronquée de l'erreur pour debug (pas de secrets, pas de tokens).
-          return new Response(`Erreur inscription (tenant_check): ${errMsg.slice(0, 200)}`, {
-            status: 500,
-            headers: { ...corsHeaders },
-          });
+          return new Response('Erreur inscription (tenant_check)', { status: 500, headers: { ...corsHeaders } });
         }
         if (existingTenant) {
-          // #region agent log
-          console.log('[auth/signup] tenant_exists', { tenantId });
-          // #endregion
           return new Response('Ce tenant existe déjà', { status: 409, headers: { ...corsHeaders } });
         }
 
@@ -946,9 +863,6 @@ export default {
             billingStatus: 'active',
           });
         } catch (e: any) {
-          // #region agent log
-          console.log('[auth/signup] upsert_tenant_failed', { err: String(e?.message ?? e).slice(0, 160) });
-          // #endregion
           return new Response('Erreur inscription (upsert_tenant)', { status: 500, headers: { ...corsHeaders } });
         }
 
@@ -961,9 +875,6 @@ export default {
             userDocId = `${userDocId}_${Math.floor(Math.random() * 10000)}`;
           }
         } catch (e: any) {
-          // #region agent log
-          console.log('[auth/signup] user_collision_check_failed', { err: String(e?.message ?? e).slice(0, 160) });
-          // #endregion
           return new Response('Erreur inscription (user_check)', { status: 500, headers: { ...corsHeaders } });
         }
 
@@ -977,18 +888,12 @@ export default {
             createdAt: new Date(),
           });
         } catch (e: any) {
-          // #region agent log
-          console.log('[auth/signup] upsert_user_failed', { err: String(e?.message ?? e).slice(0, 160) });
-          // #endregion
           return new Response('Erreur inscription (upsert_user)', { status: 500, headers: { ...corsHeaders } });
         }
 
         try {
           await ensureMembership(env, firebaseUid, tenantId, 'admin', userDocId);
         } catch (e: any) {
-          // #region agent log
-          console.log('[auth/signup] ensure_membership_failed', { err: String(e?.message ?? e).slice(0, 160) });
-          // #endregion
           return new Response('Erreur inscription (membership)', { status: 500, headers: { ...corsHeaders } });
         }
 
