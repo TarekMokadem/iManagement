@@ -37,6 +37,7 @@ class FirestoreUsersRepository implements UsersRepository {
   Future<void> addUser(AppUser user, {required String tenantId}) async {
     final data = user.toMap();
     data['tenantId'] = tenantId;
+    data['createdAt'] = FieldValue.serverTimestamp();
     // Utiliser le nom comme ID de document (sanitisé). Garantir l'unicité.
     String baseId = user.name
         .trim()

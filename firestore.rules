@@ -54,6 +54,13 @@ service cloud.firestore {
       allow update, delete: if false; // immutables
     }
 
+    // Journal d'activité (tenant portal)
+    match /tenant_audit/{docId} {
+      allow get, list: if hasAuth() && isMemberOfTenant(resourceTenantId());
+      allow create: if hasAuth() && isAdminOfTenant(requestTenantId());
+      allow update, delete: if false; // immutables
+    }
+
     // Tenants metadata
     match /tenants/{tenantId} {
       allow read: if hasAuth() && isMemberOfTenant(tenantId);

@@ -11,8 +11,11 @@ import '../providers/session_provider.dart';
 import '../providers/tenant_provider.dart';
 import '../repositories/users_repository.dart';
 import '../services/session_service.dart';
+import '../services/tenant_audit_service.dart';
 import '../services/tenant_portal_service.dart';
 import '../services/tenant_service.dart';
+import '../utils/csv_export.dart';
+import '../utils/download/download.dart';
 import 'admin/billing_screen.dart';
 
 class TenantDashboardScreen extends StatefulWidget {
@@ -25,7 +28,236 @@ class TenantDashboardScreen extends StatefulWidget {
 class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
   final TenantService _tenantService = TenantService();
   final TenantPortalService _portalService = TenantPortalService();
+  final TenantAuditService _auditService = TenantAuditService();
   int _selectedIndex = 0;
+
+  String _buildInvitationsText(List<AppUser> users) {
+    const loginUrl = 'https://imanagement.pages.dev/login';
+    return users
+        .map((u) => 'Nom: ${u.name}\nCode: ${u.code}\nConnexion: $loginUrl\n')
+        .join('\n');
+  }
+
+  Future<void> _showBulkInviteDialog({
+    required BuildContext context,
+    required UsersRepository repository,
+    required String tenantId,
+  }) async {
+    final formKey = GlobalKey<FormState>();
+    final prefixController = TextEditingController(text: 'Employé');
+    final countController = TextEditingController(text: '5');
+    final startIndexController = TextEditingController(text: '1');
+    var isAdmin = false;
+    var isSaving = false;
+    int createdCount = 0;
+
+    String generateCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      final rnd = Random.secure();
+      return List.generate(6, (_) => chars[rnd.nextInt(chars.length)]).join();
+    }
+
+    Future<String> generateUniqueCode() async {
+      for (var i = 0; i < 20; i += 1) {
+        final c = generateCode();
+        final ok = await repository.isCodeAvailable(c, tenantId: tenantId);
+        if (ok) return c;
+      }
+      throw Exception('Impossible de générer un code unique (trop de collisions)');
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Inviter en masse'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: prefixController,
+                  decoration: const InputDecoration(labelText: 'Préfixe des noms (ex: Employé)'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Champ requis' : null,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: countController,
+                        decoration: const InputDecoration(labelText: 'Nombre'),
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          final n = int.tryParse((v ?? '').trim());
+                          if (n == null || n <= 0) return 'Invalide';
+                          if (n > 100) return 'Max 100';
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: startIndexController,
+                        decoration: const InputDecoration(labelText: 'Index départ'),
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          final n = int.tryParse((v ?? '').trim());
+                          if (n == null || n <= 0) return 'Invalide';
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  value: isAdmin,
+                  onChanged: isSaving ? null : (v) => setState(() => isAdmin = v),
+                  title: const Text('Administrateur'),
+                  subtitle: const Text('Donne accès aux écrans admin et à la gestion'),
+                ),
+                if (isSaving) ...[
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(value: createdCount == 0 ? null : (createdCount / (int.tryParse(countController.text) ?? 1)).clamp(0, 1)),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Créés: $createdCount', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      if (!(formKey.currentState?.validate() ?? false)) return;
+                      final actorName = context.read<SessionProvider>().session?.userName;
+                      final prefix = prefixController.text.trim();
+                      final count = int.parse(countController.text.trim());
+                      final startIndex = int.parse(startIndexController.text.trim());
+                      setState(() {
+                        isSaving = true;
+                        createdCount = 0;
+                      });
+
+                      final created = <AppUser>[];
+                      try {
+                        for (var i = 0; i < count; i += 1) {
+                          final idx = startIndex + i;
+                          final name = '$prefix $idx';
+                          final code = await generateUniqueCode();
+                          final user = AppUser(
+                            id: '',
+                            name: name,
+                            code: code,
+                            isAdmin: isAdmin,
+                            tenantId: tenantId,
+                          );
+                          await repository.addUser(user, tenantId: tenantId);
+                          // récupérer l'id réel via stream serait coûteux; on garde id vide ici.
+                          created.add(user);
+                          setState(() => createdCount = created.length);
+                        }
+                        await _auditService.log(
+                          tenantId: tenantId,
+                          action: 'users_bulk_created',
+                          actorName: actorName,
+                          meta: {'count': created.length, 'isAdmin': isAdmin, 'prefix': prefix},
+                        );
+                        if (dialogContext.mounted) Navigator.pop(dialogContext);
+                        if (context.mounted) {
+                          await _showBulkInviteResultDialog(context: context, tenantId: tenantId, users: created);
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                        }
+                      } finally {
+                        if (dialogContext.mounted) {
+                          setState(() => isSaving = false);
+                        }
+                      }
+                    },
+              child: isSaving
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Créer'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    prefixController.dispose();
+    countController.dispose();
+    startIndexController.dispose();
+  }
+
+  Future<void> _showBulkInviteResultDialog({
+    required BuildContext context,
+    required String tenantId,
+    required List<AppUser> users,
+  }) async {
+    final csv = toCsv([
+      ['Nom', 'Code', 'Rôle'],
+      ...users.map((u) => [u.name, u.code, u.isAdmin ? 'Admin' : 'Employé']),
+    ]);
+    final invites = _buildInvitationsText(users);
+
+    await showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Invitations prêtes'),
+        content: SizedBox(
+          width: 560,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${users.length} utilisateur(s) créé(s).'),
+              const SizedBox(height: 12),
+              Text('Astuce: exporte en CSV ou copie le texte d’invitations.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: invites));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invitations copiées')));
+              }
+            },
+            child: const Text('Copier invitations'),
+          ),
+          TextButton(
+            onPressed: () {
+              try {
+                downloadTextFile(
+                  filename: 'invites_$tenantId.csv',
+                  content: csv,
+                  mimeType: 'text/csv',
+                );
+              } catch (_) {
+                // ignore
+              }
+            },
+            child: const Text('Télécharger CSV'),
+          ),
+          ElevatedButton(onPressed: () => Navigator.pop(c), child: const Text('OK')),
+        ],
+      ),
+    );
+  }
 
   Future<void> _handleLogout(BuildContext context) async {
     final sessionProvider = context.read<SessionProvider>();
@@ -113,6 +345,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
         NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), label: Text('Aperçu')),
         NavigationRailDestination(icon: Icon(Icons.person_outline), label: Text('Profil')),
         NavigationRailDestination(icon: Icon(Icons.group_outlined), label: Text('Utilisateurs')),
+        NavigationRailDestination(icon: Icon(Icons.history), label: Text('Activité')),
         NavigationRailDestination(icon: Icon(Icons.credit_card_outlined), label: Text('Facturation')),
       ],
     );
@@ -128,6 +361,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
           NavigationDestination(icon: Icon(Icons.dashboard_outlined), label: 'Aperçu'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
           NavigationDestination(icon: Icon(Icons.group_outlined), label: 'Utilisateurs'),
+          NavigationDestination(icon: Icon(Icons.history), label: 'Activité'),
           NavigationDestination(icon: Icon(Icons.credit_card_outlined), label: 'Facturation'),
         ],
       ),
@@ -151,7 +385,8 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
           0 => _buildOverview(context, colorScheme, tenantProvider, session, tenantData),
           1 => _buildProfilePanel(context, colorScheme, tenantProvider, session, tenantData),
           2 => _buildUsersPanel(context, colorScheme, tenantProvider),
-          3 => _buildBillingPanel(context, colorScheme, tenantProvider),
+          3 => _buildActivityPanel(context, colorScheme, tenantProvider, session),
+          4 => _buildBillingPanel(context, colorScheme, tenantProvider),
           _ => const SizedBox.shrink(),
         },
       ),
@@ -350,6 +585,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   ? null
                   : () async {
                       if (!(formKey.currentState?.validate() ?? false)) return;
+                      final actorName = context.read<SessionProvider>().session?.userName;
                       setState(() => isSaving = true);
                       try {
                         await _portalService.updateTenantProfile(
@@ -357,6 +593,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                           firebaseUid: firebaseUid,
                           name: nameController.text.trim(),
                           contactEmail: emailController.text.trim(),
+                        );
+                        await _auditService.log(
+                          tenantId: tenantId,
+                          action: 'tenant_profile_updated',
+                          actorName: actorName,
+                          meta: const {'source': 'tenant_portal'},
                         );
                         if (dialogContext.mounted) Navigator.pop(dialogContext);
                         if (context.mounted) {
@@ -397,6 +639,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     return StatefulBuilder(
       builder: (context, setState) {
         String query = '';
+        int visibleCount = 25;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -418,6 +661,54 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                           ),
                           onChanged: (v) => setState(() => query = v.trim().toLowerCase()),
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final actorName = context.read<SessionProvider>().session?.userName;
+                          final snap = await repository.watchUsers(tenantId: tenantId).first;
+                          final users = query.isEmpty
+                              ? snap
+                              : snap
+                                  .where((u) =>
+                                      u.name.toLowerCase().contains(query) ||
+                                      u.code.toLowerCase().contains(query))
+                                  .toList();
+                          String fmt(DateTime? dt) => dt?.toIso8601String() ?? '';
+                          final csv = toCsv([
+                            ['Id', 'Nom', 'Code', 'Rôle', 'Créé le'],
+                            ...users.map((u) => [u.id, u.name, u.code, u.isAdmin ? 'Admin' : 'Employé', fmt(u.createdAt)]),
+                          ]);
+                          final filename = 'utilisateurs_$tenantId.csv';
+                          try {
+                            downloadTextFile(filename: filename, content: csv, mimeType: 'text/csv');
+                          } catch (_) {
+                            await Clipboard.setData(ClipboardData(text: csv));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('CSV copié dans le presse-papier')),
+                              );
+                            }
+                          }
+                          await _auditService.log(
+                            tenantId: tenantId,
+                            action: 'users_exported_csv',
+                            actorName: actorName,
+                            meta: {'count': users.length},
+                          );
+                        },
+                        icon: const Icon(Icons.download),
+                        label: const Text('Exporter CSV'),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => _showBulkInviteDialog(
+                          context: context,
+                          repository: repository,
+                          tenantId: tenantId,
+                        ),
+                        icon: const Icon(Icons.group_add_outlined),
+                        label: const Text('Inviter en masse'),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
@@ -462,8 +753,21 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
 
                       filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
+                      final shown = filtered.take(visibleCount).toList();
                       return Column(
-                        children: filtered.map((u) => _userRow(context, scheme, repository, tenantId, u)).toList(),
+                        children: [
+                          ...shown.map((u) => _userRow(context, scheme, repository, tenantId, u)),
+                          if (shown.length < filtered.length) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.center,
+                              child: OutlinedButton(
+                                onPressed: () => setState(() => visibleCount += 25),
+                                child: Text('Afficher plus (${filtered.length - shown.length})'),
+                              ),
+                            ),
+                          ],
+                        ],
                       );
                     },
                   ),
@@ -526,6 +830,64 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
               await Clipboard.setData(ClipboardData(text: user.code));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Code copié')));
+              }
+            },
+          ),
+          IconButton(
+            tooltip: 'Copier invitation',
+            icon: const Icon(Icons.send_outlined),
+            onPressed: () async {
+              final actorName = context.read<SessionProvider>().session?.userName;
+              const loginUrl = 'https://imanagement.pages.dev/login';
+              final msg = 'Voici votre accès iManagement.\n\nCode: ${user.code}\nConnexion: $loginUrl';
+              await Clipboard.setData(ClipboardData(text: msg));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invitation copiée')));
+              }
+              await _auditService.log(
+                tenantId: tenantId,
+                action: 'user_invite_copied',
+                actorName: actorName,
+                meta: {'userId': user.id},
+              );
+            },
+          ),
+          IconButton(
+            tooltip: 'Régénérer code',
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              final actorName = context.read<SessionProvider>().session?.userName;
+              String generateCode() {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                final rnd = Random.secure();
+                return List.generate(6, (_) => chars[rnd.nextInt(chars.length)]).join();
+              }
+
+              String? newCode;
+              for (var i = 0; i < 10; i += 1) {
+                final candidate = generateCode();
+                final ok = await repository.isCodeAvailable(candidate, tenantId: tenantId);
+                if (ok) {
+                  newCode = candidate;
+                  break;
+                }
+              }
+              if (newCode == null) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Impossible de générer un code unique')));
+                }
+                return;
+              }
+              final updated = user.copyWith(code: newCode, tenantId: tenantId);
+              await repository.updateUser(user.id, updated, tenantId: tenantId);
+              await _auditService.log(
+                tenantId: tenantId,
+                action: 'user_code_regenerated',
+                actorName: actorName,
+                meta: {'userId': user.id},
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Code régénéré')));
               }
             },
           ),
@@ -657,6 +1019,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   ? null
                   : () async {
                       if (!(formKey.currentState?.validate() ?? false)) return;
+                      final actorName = context.read<SessionProvider>().session?.userName;
                       setState(() => isSaving = true);
                       try {
                         final trimmedCode = codeController.text.trim();
@@ -672,6 +1035,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                           tenantId: tenantId,
                         );
                         await repository.addUser(user, tenantId: tenantId);
+                        await _auditService.log(
+                          tenantId: tenantId,
+                          action: 'user_created',
+                          actorName: actorName,
+                          meta: {'name': user.name, 'isAdmin': user.isAdmin},
+                        );
                         if (dialogContext.mounted) Navigator.pop(dialogContext);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Utilisateur ajouté')));
@@ -747,6 +1116,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   ? null
                   : () async {
                       if (!(formKey.currentState?.validate() ?? false)) return;
+                      final actorName = context.read<SessionProvider>().session?.userName;
                       setState(() => isSaving = true);
                       try {
                         final updated = user.copyWith(
@@ -756,6 +1126,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                           tenantId: tenantId,
                         );
                         await repository.updateUser(user.id, updated, tenantId: tenantId);
+                        await _auditService.log(
+                          tenantId: tenantId,
+                          action: 'user_updated',
+                          actorName: actorName,
+                          meta: {'userId': user.id},
+                        );
                         if (dialogContext.mounted) Navigator.pop(dialogContext);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Utilisateur mis à jour')));
@@ -785,6 +1161,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     String tenantId,
     AppUser user,
   ) async {
+    final actorName = context.read<SessionProvider>().session?.userName;
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
@@ -798,9 +1175,76 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     );
     if (ok != true) return;
     await repository.deleteUser(user.id, tenantId: tenantId);
+    await _auditService.log(
+      tenantId: tenantId,
+      action: 'user_deleted',
+      actorName: actorName,
+      meta: {'userId': user.id},
+    );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Utilisateur supprimé')));
     }
+  }
+
+  Widget _buildActivityPanel(
+    BuildContext context,
+    ColorScheme scheme,
+    TenantProvider tenantProvider,
+    SessionData? session,
+  ) {
+    final tenantId = tenantProvider.tenantId;
+    if (tenantId == null || tenantId.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader('Activité', 'Historique des actions administratives', scheme),
+        const SizedBox(height: 16),
+        _panelCard(
+          scheme,
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _auditService.watchRecent(tenantId: tenantId),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text('Erreur: ${snapshot.error}');
+              }
+              if (!snapshot.hasData) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              final items = snapshot.data!;
+              if (items.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Text('Aucune activité pour le moment.'),
+                );
+              }
+
+              return Column(
+                children: items.map((e) {
+                  final action = (e['action'] as String?) ?? 'action';
+                  final actor = (e['actorName'] as String?) ?? '—';
+                  final ts = e['createdAt'];
+                  DateTime? dt;
+                  if (ts is Timestamp) dt = ts.toDate();
+                  final when = dt != null ? MaterialLocalizations.of(context).formatShortDate(dt) : '';
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.bolt, color: scheme.primary),
+                    title: Text(action, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text('$actor${when.isNotEmpty ? ' • $when' : ''}'),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildBillingPanel(BuildContext context, ColorScheme scheme, TenantProvider tenantProvider) {
@@ -847,45 +1291,93 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.4),
-            colorScheme.primary.withValues(alpha: 0.8),
+            colorScheme.surface,
+            colorScheme.primaryContainer.withValues(alpha: 0.12),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.08),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withValues(alpha: 0.08),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            company,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: colorScheme.onPrimary.withValues(alpha: 0.8),
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withValues(alpha: 0.7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.business_rounded, color: colorScheme.onPrimary, size: 28),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      company,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           Wrap(
-            spacing: 16,
+            spacing: 12,
             runSpacing: 12,
             children: [
-              _buildHeroChip(colorScheme, Icons.workspace_premium, tenant.plan.toUpperCase()),
+              _buildHeroChip(colorScheme, Icons.workspace_premium_outlined, tenant.plan.toUpperCase()),
               _buildHeroChip(
                 colorScheme,
-                tenant.hasPaymentIssue ? Icons.warning_amber : Icons.verified_user,
+                tenant.hasPaymentIssue ? Icons.warning_amber_rounded : Icons.verified_rounded,
                 tenant.hasPaymentIssue ? 'Paiement à vérifier' : 'Facturation active',
-                background: tenant.hasPaymentIssue ? Colors.redAccent : null,
+                isError: tenant.hasPaymentIssue,
               ),
             ],
           ),
@@ -894,23 +1386,33 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     );
   }
 
-  Widget _buildHeroChip(ColorScheme scheme, IconData icon, String label, {Color? background}) {
+  Widget _buildHeroChip(ColorScheme scheme, IconData icon, String label, {bool isError = false}) {
+    final bgColor = isError
+        ? Colors.red.shade50
+        : scheme.primaryContainer.withValues(alpha: 0.5);
+    final fgColor = isError ? Colors.red.shade700 : scheme.primary;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: background ?? scheme.onPrimary.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(30),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: fgColor.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: scheme.onPrimary),
+          Icon(icon, size: 16, color: fgColor),
           const SizedBox(width: 8),
           Text(
             label,
             style: TextStyle(
-              color: scheme.onPrimary,
+              color: fgColor,
               fontWeight: FontWeight.w600,
+              fontSize: 13,
             ),
           ),
         ],
