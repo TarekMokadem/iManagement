@@ -76,9 +76,11 @@ class PublicLayout extends StatelessWidget {
             label: 'Tarifs',
             onPressed: () => _navigateTo(context, '/pricing'),
           ),
-          _NavButton(
-            label: 'Connexion',
-            onPressed: () => _showLoginMenu(context),
+          Builder(
+            builder: (btnContext) => _NavButton(
+              label: 'Connexion',
+              onPressed: () => _showLoginMenu(btnContext),
+            ),
           ),
           const SizedBox(width: 8),
         ],
