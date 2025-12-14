@@ -13,7 +13,10 @@ import 'repositories/products_repository.dart';
 import 'repositories/users_repository.dart';
 import 'screens/checkout_cancel_screen.dart';
 import 'screens/checkout_success_screen.dart';
+import 'screens/landing/features_screen.dart';
 import 'screens/landing/landing_screen.dart';
+import 'screens/landing/legal_screen.dart';
+import 'screens/landing/pricing_screen.dart';
 import 'screens/onboarding/onboarding_wizard_screen.dart';
 import 'screens/root_screen.dart';
 import 'screens/signup/signup_screen.dart';
@@ -53,6 +56,9 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const LandingScreen(),
+        '/features': (context) => const FeaturesScreen(),
+        '/pricing': (context) => const PricingScreen(),
+        '/legal': (context) => const LegalScreen(),
         // Connexions
         '/tenant-login': (context) => const TenantLoginScreen(),
         '/tenant-dashboard': (context) => const TenantDashboardScreen(),

@@ -102,11 +102,11 @@ class _LandingScreenState extends State<LandingScreen>
       actions: [
         if (!isMobile) ...[
           TextButton(
-            onPressed: () => _scrollToSection('features'),
+            onPressed: () => Navigator.pushNamed(context, '/features'),
             child: const Text('Fonctionnalités'),
           ),
           TextButton(
-            onPressed: () => _scrollToSection('pricing'),
+            onPressed: () => Navigator.pushNamed(context, '/pricing'),
             child: const Text('Tarifs'),
           ),
           TextButton(
@@ -240,7 +240,7 @@ class _LandingScreenState extends State<LandingScreen>
                     ),
                   ),
                   OutlinedButton(
-                    onPressed: () => _scrollToSection('features'),
+                    onPressed: () => Navigator.pushNamed(context, '/features'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colorScheme.primary,
                       padding: EdgeInsets.symmetric(
@@ -1019,16 +1019,16 @@ class _LandingScreenState extends State<LandingScreen>
                 Row(
                   children: [
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => Navigator.pushNamed(context, '/legal'),
                       child: const Text('Mentions légales'),
                     ),
-                    const TextButton(
-                      onPressed: null,
-                      child: Text('Confidentialité'),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/features'),
+                      child: const Text('Fonctionnalités'),
                     ),
-                    const TextButton(
-                      onPressed: null,
-                      child: Text('CGV'),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/pricing'),
+                      child: const Text('Tarifs'),
                     ),
                   ],
                 ),
@@ -1044,22 +1044,6 @@ class _LandingScreenState extends State<LandingScreen>
           ),
         ],
       ),
-    );
-  }
-
-  void _scrollToSection(String section) {
-    final BuildContext? targetContext = switch (section) {
-      'features' => _featuresKey.currentContext,
-      'pricing' => _pricingKey.currentContext,
-      _ => null,
-    };
-    if (targetContext == null) return;
-
-    Scrollable.ensureVisible(
-      targetContext,
-      duration: const Duration(milliseconds: 550),
-      curve: Curves.easeInOutCubic,
-      alignment: 0.05,
     );
   }
 }
