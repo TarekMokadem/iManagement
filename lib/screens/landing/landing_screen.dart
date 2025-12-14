@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/public_layout.dart';
+
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
 
@@ -12,9 +14,6 @@ class _LandingScreenState extends State<LandingScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  final ScrollController _scrollController = ScrollController();
-  final GlobalKey _featuresKey = GlobalKey();
-  final GlobalKey _pricingKey = GlobalKey();
 
   @override
   void initState() {
@@ -36,7 +35,6 @@ class _LandingScreenState extends State<LandingScreen>
   @override
   void dispose() {
     _controller.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -46,95 +44,19 @@ class _LandingScreenState extends State<LandingScreen>
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 768;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SelectionArea(
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            _buildAppBar(colorScheme, isMobile),
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  _buildHeroSection(colorScheme, isMobile),
-                  _buildSocialProofSection(colorScheme, isMobile),
-                  KeyedSubtree(
-                    key: _featuresKey,
-                    child: _buildFeaturesSection(colorScheme, isMobile),
-                  ),
-                  _buildHowItWorksSection(colorScheme, isMobile),
-                  KeyedSubtree(
-                    key: _pricingKey,
-                    child: _buildPricingSection(colorScheme, isMobile),
-                  ),
-                  _buildFAQSection(colorScheme, isMobile),
-                  _buildCTASection(colorScheme, isMobile),
-                  _buildFooter(colorScheme, isMobile),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar(ColorScheme colorScheme, bool isMobile) {
-    return SliverAppBar(
-      floating: true,
-      snap: true,
-      elevation: 0,
-      backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
-      title: Row(
+    return PublicLayout(
+      child: Column(
         children: [
-          Icon(Icons.inventory_2, color: colorScheme.primary, size: 28),
-          const SizedBox(width: 8),
-          Text(
-            'iManagement',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: colorScheme.onSurface,
-            ),
-          ),
+          _buildHeroSection(colorScheme, isMobile),
+          _buildSocialProofSection(colorScheme, isMobile),
+          _buildFeaturesSection(colorScheme, isMobile),
+          _buildHowItWorksSection(colorScheme, isMobile),
+          _buildPricingSection(colorScheme, isMobile),
+          _buildFAQSection(colorScheme, isMobile),
+          _buildCTASection(colorScheme, isMobile),
+          _buildFooter(colorScheme, isMobile),
         ],
       ),
-      actions: [
-        if (!isMobile) ...[
-          TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/features'),
-            child: const Text('Fonctionnalités'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/pricing'),
-            child: const Text('Tarifs'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/tenant-login'),
-            child: const Text('Connexion'),
-          ),
-          const SizedBox(width: 8),
-        ],
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/signup'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Essai gratuit',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

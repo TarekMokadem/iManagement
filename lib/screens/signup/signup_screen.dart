@@ -5,6 +5,7 @@ import '../../providers/session_provider.dart';
 import '../../providers/tenant_provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/session_service.dart';
+import '../../widgets/public_layout.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -98,17 +99,9 @@ class _SignupScreenState extends State<SignupScreen> {
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 768;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/'),
-        ),
-      ),
-      body: Center(
+    return PublicLayout(
+      showBackButton: true,
+      child: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isMobile ? 24 : 48),
           child: Container(

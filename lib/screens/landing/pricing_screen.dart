@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/public_layout.dart';
+
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
 
@@ -38,78 +40,21 @@ class _PricingScreenState extends State<PricingScreen>
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 768;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SelectionArea(
-        child: CustomScrollView(
-          slivers: [
-            _buildAppBar(colorScheme),
-            SliverToBoxAdapter(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    _buildHeroSection(colorScheme, isMobile),
-                    _buildPricingSection(colorScheme, isMobile),
-                    _buildComparisonSection(colorScheme, isMobile),
-                    _buildFAQSection(colorScheme, isMobile),
-                    _buildCTASection(colorScheme, isMobile),
-                    _buildFooter(colorScheme, isMobile),
-                  ],
-                ),
-              ),
-            ),
+    return PublicLayout(
+      showBackButton: true,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          children: [
+            _buildHeroSection(colorScheme, isMobile),
+            _buildPricingSection(colorScheme, isMobile),
+            _buildComparisonSection(colorScheme, isMobile),
+            _buildFAQSection(colorScheme, isMobile),
+            _buildCTASection(colorScheme, isMobile),
+            _buildFooter(colorScheme, isMobile),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAppBar(ColorScheme colorScheme) {
-    return SliverAppBar(
-      floating: true,
-      snap: true,
-      elevation: 0,
-      backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: Row(
-        children: [
-          Icon(Icons.inventory_2, color: colorScheme.primary, size: 24),
-          const SizedBox(width: 8),
-          Text(
-            'iManagement',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/signup'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Essai gratuit',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

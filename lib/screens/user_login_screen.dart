@@ -5,6 +5,7 @@ import '../providers/session_provider.dart';
 import '../providers/tenant_provider.dart';
 import '../services/auth_service.dart';
 import '../services/session_service.dart';
+import '../widgets/public_layout.dart';
 
 class UserLoginScreen extends StatefulWidget {
   const UserLoginScreen({super.key});
@@ -59,17 +60,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/'),
-        ),
-      ),
-      body: Center(
+    return PublicLayout(
+      showBackButton: true,
+      child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Form(
@@ -134,5 +127,4 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     );
   }
 }
-
 
