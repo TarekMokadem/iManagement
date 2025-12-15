@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/public_layout.dart';
 import '../../widgets/animations/fx_text_fade_top.dart';
+import '../../widgets/animations/fx_lazy_fade_in.dart';
 
 class FeaturesScreen extends StatefulWidget {
   const FeaturesScreen({super.key});
@@ -179,14 +180,17 @@ class _FeaturesScreenState extends State<FeaturesScreen>
 
               return Padding(
                 padding: EdgeInsets.only(bottom: isMobile ? 48 : 64),
-                child: _buildFeatureRow(
-                  colorScheme,
-                  isMobile,
-                  feature['icon'] as IconData,
-                  feature['title'] as String,
-                  feature['description'] as String,
-                  feature['highlights'] as List<String>,
-                  isReversed,
+                child: FxLazyFadeIn(
+                  duration: const Duration(milliseconds: 900),
+                  child: _buildFeatureRow(
+                    colorScheme,
+                    isMobile,
+                    feature['icon'] as IconData,
+                    feature['title'] as String,
+                    feature['description'] as String,
+                    feature['highlights'] as List<String>,
+                    isReversed,
+                  ),
                 ),
               );
             }).toList(),

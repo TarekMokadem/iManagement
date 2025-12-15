@@ -1,9 +1,8 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../widgets/public_layout.dart';
 import '../../widgets/animations/fx_text_fade_top.dart';
+import '../../widgets/animations/fx_lazy_fade_in.dart';
 
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
@@ -159,53 +158,50 @@ class _PricingScreenState extends State<PricingScreen>
           constraints: const BoxConstraints(maxWidth: 1000),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final freeCard = _buildPricingCard(
-                colorScheme,
-                'Free',
-                freePrice,
-                freePeriod,
-                'Pour démarrer',
-                [
-                  '3 utilisateurs',
-                  '200 produits',
-                  '1 000 opérations/mois',
-                  'Support communautaire',
-                  'Accès Web',
-                ],
-                false,
-                isMobile,
-              );
-              final proCard = _buildPricingCard(
-                colorScheme,
-                'Pro',
-                proPrice,
-                proPeriod,
-                'Pour les équipes',
-                [
-                  '20 utilisateurs',
-                  '10 000 produits',
-                  '100 000 opérations/mois',
-                  'Support prioritaire',
-                  'Exports avancés (CSV)',
-                  'Historique illimité',
-                  'Scanner codes-barres',
-                  'Alertes personnalisées',
-                ],
-                true,
-                isMobile,
-              );
-
               if (isMobile) {
                 return Column(
                   children: [
-                    _buildFlippableCard(
-                      freeCard,
-                      'free-${_isAnnual ? 'annual' : 'monthly'}',
+                    FxLazyFadeIn(
+                      duration: const Duration(milliseconds: 900),
+                      child: _buildPricingCard(
+                        colorScheme,
+                        'Free',
+                        freePrice,
+                        freePeriod,
+                        'Pour démarrer',
+                        [
+                          '3 utilisateurs',
+                          '200 produits',
+                          '1 000 opérations/mois',
+                          'Support communautaire',
+                          'Accès Web',
+                        ],
+                        false,
+                        true,
+                      ),
                     ),
                     const SizedBox(height: 24),
-                    _buildFlippableCard(
-                      proCard,
-                      'pro-${_isAnnual ? 'annual' : 'monthly'}',
+                    FxLazyFadeIn(
+                      duration: const Duration(milliseconds: 900),
+                      child: _buildPricingCard(
+                        colorScheme,
+                        'Pro',
+                        proPrice,
+                        proPeriod,
+                        'Pour les équipes',
+                        [
+                          '20 utilisateurs',
+                          '10 000 produits',
+                          '100 000 opérations/mois',
+                          'Support prioritaire',
+                          'Exports avancés (CSV)',
+                          'Historique illimité',
+                          'Scanner codes-barres',
+                          'Alertes personnalisées',
+                        ],
+                        true,
+                        true,
+                      ),
                     ),
                   ],
                 );
@@ -216,16 +212,49 @@ class _PricingScreenState extends State<PricingScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Flexible(
-                    child: _buildFlippableCard(
-                      freeCard,
-                      'free-${_isAnnual ? 'annual' : 'monthly'}',
+                    child: FxLazyFadeIn(
+                      duration: const Duration(milliseconds: 900),
+                      child: _buildPricingCard(
+                        colorScheme,
+                        'Free',
+                        freePrice,
+                        freePeriod,
+                        'Pour démarrer',
+                        [
+                          '3 utilisateurs',
+                          '200 produits',
+                          '1 000 opérations/mois',
+                          'Support communautaire',
+                          'Accès Web',
+                        ],
+                        false,
+                        false,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 32),
                   Flexible(
-                    child: _buildFlippableCard(
-                      proCard,
-                      'pro-${_isAnnual ? 'annual' : 'monthly'}',
+                    child: FxLazyFadeIn(
+                      duration: const Duration(milliseconds: 900),
+                      child: _buildPricingCard(
+                        colorScheme,
+                        'Pro',
+                        proPrice,
+                        proPeriod,
+                        'Pour les équipes',
+                        [
+                          '20 utilisateurs',
+                          '10 000 produits',
+                          '100 000 opérations/mois',
+                          'Support prioritaire',
+                          'Exports avancés (CSV)',
+                          'Historique illimité',
+                          'Scanner codes-barres',
+                          'Alertes personnalisées',
+                        ],
+                        true,
+                        false,
+                      ),
                     ),
                   ),
                 ],
@@ -412,35 +441,6 @@ class _PricingScreenState extends State<PricingScreen>
                 ),
               )),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFlippableCard(Widget child, String keyValue) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      transitionBuilder: (widget, animation) {
-        // Flip beaucoup plus subtil pour éviter l'effet agressif
-        final rotate = Tween(begin: math.pi / 8, end: 0.0).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-        );
-        return AnimatedBuilder(
-          animation: rotate,
-          child: widget,
-          builder: (context, child) {
-            return Transform(
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.001)
-                ..rotateY(rotate.value),
-              alignment: Alignment.center,
-              child: child,
-            );
-          },
-        );
-      },
-      child: KeyedSubtree(
-        key: ValueKey(keyValue),
-        child: child,
       ),
     );
   }

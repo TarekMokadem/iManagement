@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/public_layout.dart';
 import '../../widgets/animations/fx_text_fade_top.dart';
+import '../../widgets/animations/fx_lazy_fade_in.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -129,78 +130,81 @@ class _LandingScreenState extends State<LandingScreen>
                 ),
               ),
               const SizedBox(height: 48),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                alignment: WrapAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => Navigator.pushNamed(context, '/signup'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 32 : 48,
-                        vertical: isMobile ? 16 : 20,
-                      ),
-                      elevation: 4,
-                      shadowColor: colorScheme.primary.withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Commencer gratuitement',
-                          style: TextStyle(
-                            fontSize: isMobile ? 16 : 18,
-                            fontWeight: FontWeight.w600,
-                          ),
+              FxLazyFadeIn(
+                duration: const Duration(milliseconds: 900),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushNamed(context, '/signup'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 32 : 48,
+                          vertical: isMobile ? 16 : 20,
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward, size: 20),
-                      ],
-                    ),
-                  ),
-                  OutlinedButton(
-                    onPressed: () => Navigator.pushNamed(context, '/features'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.primary,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 32 : 48,
-                        vertical: isMobile ? 16 : 20,
+                        elevation: 4,
+                        shadowColor: colorScheme.primary.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      side: BorderSide(color: colorScheme.outline),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Découvrir les fonctionnalités',
-                      style: TextStyle(
-                        fontSize: isMobile ? 16 : 18,
-                        fontWeight: FontWeight.w600,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Commencer gratuitement',
+                            style: TextStyle(
+                              fontSize: isMobile ? 16 : 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward, size: 20),
+                        ],
                       ),
                     ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/login'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: colorScheme.onSurface,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 24 : 32,
-                        vertical: 16,
+                    OutlinedButton(
+                      onPressed: () => Navigator.pushNamed(context, '/features'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.primary,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 32 : 48,
+                          vertical: isMobile ? 16 : 20,
+                        ),
+                        side: BorderSide(color: colorScheme.outline),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Découvrir les fonctionnalités',
+                        style: TextStyle(
+                          fontSize: isMobile ? 16 : 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    icon: const Icon(Icons.play_circle_outline),
-                    label: const Text(
-                      'Voir la démo',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    TextButton.icon(
+                      onPressed: () => Navigator.pushNamed(context, '/login'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: colorScheme.onSurface,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 24 : 32,
+                          vertical: 16,
+                        ),
+                      ),
+                      icon: const Icon(Icons.play_circle_outline),
+                      label: const Text(
+                        'Voir la démo',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
               Row(
