@@ -336,59 +336,60 @@ class _LandingScreenState extends State<LandingScreen>
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 24 : 64,
+        horizontal: isMobile ? 24 : 0,
         vertical: isMobile ? 60 : 100,
       ),
-      child: Column(
-        children: [
-          Text(
-            'Tout ce dont vous avez besoin',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isMobile ? 32 : 42,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Des fonctionnalités pensées pour simplifier votre quotidien',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isMobile ? 16 : 18,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 48),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // Responsive grid: 1 col mobile, 2 col tablette, 3 col desktop
-              final width = constraints.maxWidth;
-              final crossAxisCount = isMobile ? 1 : (width < 1024 ? 2 : 3);
-              
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                  childAspectRatio: isMobile ? 3.5 : (crossAxisCount == 2 ? 1.4 : 1.3),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 72),
+            child: Column(
+              children: [
+                Text(
+                  'Tout ce dont vous avez besoin',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isMobile ? 32 : 42,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
-                itemCount: features.length,
-                itemBuilder: (context, index) {
-                  final feature = features[index];
-                  return _buildFeatureCard(
-                    colorScheme,
-                    feature['icon'] as IconData,
-                    feature['title'] as String,
-                    feature['description'] as String,
-                  );
-                },
-              );
-            },
+                const SizedBox(height: 16),
+                Text(
+                  'Des fonctionnalités pensées pour simplifier votre quotidien',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isMobile ? 16 : 18,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 48),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isMobile ? 1 : 3,
+                    crossAxisSpacing: isMobile ? 0 : 20,
+                    mainAxisSpacing: isMobile ? 16 : 20,
+                    childAspectRatio: isMobile ? 3.5 : 1.15,
+                  ),
+                  itemCount: features.length,
+                  itemBuilder: (context, index) {
+                    final feature = features[index];
+                    return _buildFeatureCard(
+                      colorScheme,
+                      feature['icon'] as IconData,
+                      feature['title'] as String,
+                      feature['description'] as String,
+                      isMobile,
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -398,42 +399,42 @@ class _LandingScreenState extends State<LandingScreen>
     IconData icon,
     String title,
     String description,
+    bool isMobile,
   ) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isMobile ? 20 : 18),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.15)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: colorScheme.shadow.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: colorScheme.primary, size: 20),
+              child: Icon(icon, color: colorScheme.primary, size: 24),
             ),
             const SizedBox(height: 12),
             Text(
               title,
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontSize: isMobile ? 18 : 17,
+                fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
             ),
@@ -442,12 +443,10 @@ class _LandingScreenState extends State<LandingScreen>
               child: Text(
                 description,
                 style: TextStyle(
-                  fontSize: 13,
-                  color: colorScheme.onSurface.withValues(alpha: 0.65),
-                  height: 1.4,
+                  fontSize: isMobile ? 14 : 13,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  height: 1.5,
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
