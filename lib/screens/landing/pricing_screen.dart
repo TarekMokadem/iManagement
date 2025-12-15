@@ -415,10 +415,11 @@ class _PricingScreenState extends State<PricingScreen>
 
   Widget _buildFlippableCard(Widget child, String keyValue) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 220),
       transitionBuilder: (widget, animation) {
-        final rotate = Tween(begin: math.pi / 2, end: 0.0).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        // Flip beaucoup plus subtil pour éviter l'effet agressif
+        final rotate = Tween(begin: math.pi / 8, end: 0.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeInOut),
         );
         return AnimatedBuilder(
           animation: rotate,
