@@ -40,7 +40,7 @@ class _LegalScreenState extends State<LegalScreen>
     final isMobile = size.width < 768;
 
     return PublicLayout(
-      showBackButton: true,
+      showBackButton: false,
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Column(

@@ -43,7 +43,7 @@ class _PricingScreenState extends State<PricingScreen>
     final isMobile = size.width < 768;
 
     return PublicLayout(
-      showBackButton: true,
+      showBackButton: false,
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Column(
