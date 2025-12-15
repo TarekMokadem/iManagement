@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../widgets/public_layout.dart';
@@ -149,98 +151,85 @@ class _PricingScreenState extends State<PricingScreen>
         horizontal: isMobile ? 24 : 64,
         vertical: isMobile ? 60 : 100,
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (isMobile) {
-            return Column(
-              children: [
-                _buildPricingCard(
-                  colorScheme,
-                  'Free',
-                  freePrice,
-                  freePeriod,
-                  'Pour démarrer',
-                  [
-                    '3 utilisateurs',
-                    '200 produits',
-                    '1 000 opérations/mois',
-                    'Support communautaire',
-                    'Accès Web',
-                  ],
-                  false,
-                  true,
-                ),
-                const SizedBox(height: 24),
-                _buildPricingCard(
-                  colorScheme,
-                  'Pro',
-                  proPrice,
-                  proPeriod,
-                  'Pour les équipes',
-                  [
-                    '20 utilisateurs',
-                    '10 000 produits',
-                    '100 000 opérations/mois',
-                    'Support prioritaire',
-                    'Exports avancés (CSV)',
-                    'Historique illimité',
-                    'Scanner codes-barres',
-                    'Alertes personnalisées',
-                  ],
-                  true,
-                  true,
-                ),
-              ],
-            );
-          }
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final freeCard = _buildPricingCard(
+                colorScheme,
+                'Free',
+                freePrice,
+                freePeriod,
+                'Pour démarrer',
+                [
+                  '3 utilisateurs',
+                  '200 produits',
+                  '1 000 opérations/mois',
+                  'Support communautaire',
+                  'Accès Web',
+                ],
+                false,
+                isMobile,
+              );
+              final proCard = _buildPricingCard(
+                colorScheme,
+                'Pro',
+                proPrice,
+                proPeriod,
+                'Pour les équipes',
+                [
+                  '20 utilisateurs',
+                  '10 000 produits',
+                  '100 000 opérations/mois',
+                  'Support prioritaire',
+                  'Exports avancés (CSV)',
+                  'Historique illimité',
+                  'Scanner codes-barres',
+                  'Alertes personnalisées',
+                ],
+                true,
+                isMobile,
+              );
 
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: _buildPricingCard(
-                  colorScheme,
-                  'Free',
-                  freePrice,
-                  freePeriod,
-                  'Pour démarrer',
-                  [
-                    '3 utilisateurs',
-                    '200 produits',
-                    '1 000 opérations/mois',
-                    'Support communautaire',
-                    'Accès Web',
+              if (isMobile) {
+                return Column(
+                  children: [
+                    _buildFlippableCard(
+                      freeCard,
+                      'free-${_isAnnual ? 'annual' : 'monthly'}',
+                    ),
+                    const SizedBox(height: 24),
+                    _buildFlippableCard(
+                      proCard,
+                      'pro-${_isAnnual ? 'annual' : 'monthly'}',
+                    ),
                   ],
-                  false,
-                  false,
-                ),
-              ),
-              const SizedBox(width: 32),
-              Flexible(
-                child: _buildPricingCard(
-                  colorScheme,
-                  'Pro',
-                  proPrice,
-                  proPeriod,
-                  'Pour les équipes',
-                  [
-                    '20 utilisateurs',
-                    '10 000 produits',
-                    '100 000 opérations/mois',
-                    'Support prioritaire',
-                    'Exports avancés (CSV)',
-                    'Historique illimité',
-                    'Scanner codes-barres',
-                    'Alertes personnalisées',
-                  ],
-                  true,
-                  false,
-                ),
-              ),
-            ],
-          );
-        },
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: _buildFlippableCard(
+                      freeCard,
+                      'free-${_isAnnual ? 'annual' : 'monthly'}',
+                    ),
+                  ),
+                  const SizedBox(width: 32),
+                  Flexible(
+                    child: _buildFlippableCard(
+                      proCard,
+                      'pro-${_isAnnual ? 'annual' : 'monthly'}',
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -420,6 +409,34 @@ class _PricingScreenState extends State<PricingScreen>
                 ),
               )),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFlippableCard(Widget child, String keyValue) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (widget, animation) {
+        final rotate = Tween(begin: math.pi / 2, end: 0.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        );
+        return AnimatedBuilder(
+          animation: rotate,
+          child: widget,
+          builder: (context, child) {
+            return Transform(
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateY(rotate.value),
+              alignment: Alignment.center,
+              child: child,
+            );
+          },
+        );
+      },
+      child: KeyedSubtree(
+        key: ValueKey(keyValue),
+        child: child,
       ),
     );
   }
