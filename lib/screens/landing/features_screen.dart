@@ -161,28 +161,33 @@ class _FeaturesScreenState extends State<FeaturesScreen>
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 24 : 64,
-        vertical: isMobile ? 60 : 100,
+        horizontal: isMobile ? 24 : 72,
+        vertical: isMobile ? 48 : 80,
       ),
-      child: Column(
-        children: features.asMap().entries.map((entry) {
-          final index = entry.key;
-          final feature = entry.value;
-          final isReversed = index.isOdd && !isMobile;
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Column(
+            children: features.asMap().entries.map((entry) {
+              final index = entry.key;
+              final feature = entry.value;
+              final isReversed = index.isOdd && !isMobile;
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 80),
-            child: _buildFeatureRow(
-              colorScheme,
-              isMobile,
-              feature['icon'] as IconData,
-              feature['title'] as String,
-              feature['description'] as String,
-              feature['highlights'] as List<String>,
-              isReversed,
-            ),
-          );
-        }).toList(),
+              return Padding(
+                padding: EdgeInsets.only(bottom: isMobile ? 48 : 64),
+                child: _buildFeatureRow(
+                  colorScheme,
+                  isMobile,
+                  feature['icon'] as IconData,
+                  feature['title'] as String,
+                  feature['description'] as String,
+                  feature['highlights'] as List<String>,
+                  isReversed,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
@@ -286,8 +291,8 @@ class _FeaturesScreenState extends State<FeaturesScreen>
     }
 
     final children = isReversed
-        ? [contentWidget, const SizedBox(width: 60), iconWidget]
-        : [iconWidget, const SizedBox(width: 60), contentWidget];
+        ? [contentWidget, const SizedBox(width: 40), iconWidget]
+        : [iconWidget, const SizedBox(width: 40), contentWidget];
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
