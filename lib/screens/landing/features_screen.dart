@@ -166,7 +166,8 @@ class _FeaturesScreenState extends State<FeaturesScreen>
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
+          // On limite un peu plus la largeur pour avoir de vraies marges latérales
+          constraints: const BoxConstraints(maxWidth: 1000),
           child: Column(
             children: features.asMap().entries.map((entry) {
               final index = entry.key;
@@ -295,6 +296,7 @@ class _FeaturesScreenState extends State<FeaturesScreen>
         : [iconWidget, const SizedBox(width: 40), contentWidget];
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: children,
     );
