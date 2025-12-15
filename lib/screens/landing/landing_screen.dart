@@ -359,24 +359,32 @@ class _LandingScreenState extends State<LandingScreen>
               color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
-          const SizedBox(height: 64),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 1 : 3,
-              crossAxisSpacing: 24,
-              mainAxisSpacing: 24,
-              childAspectRatio: isMobile ? 3 : 1.2,
-            ),
-            itemCount: features.length,
-            itemBuilder: (context, index) {
-              final feature = features[index];
-              return _buildFeatureCard(
-                colorScheme,
-                feature['icon'] as IconData,
-                feature['title'] as String,
-                feature['description'] as String,
+          const SizedBox(height: 48),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Responsive grid: 1 col mobile, 2 col tablette, 3 col desktop
+              final width = constraints.maxWidth;
+              final crossAxisCount = isMobile ? 1 : (width < 1024 ? 2 : 3);
+              
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 20,
+                  childAspectRatio: isMobile ? 3.5 : (crossAxisCount == 2 ? 1.4 : 1.3),
+                ),
+                itemCount: features.length,
+                itemBuilder: (context, index) {
+                  final feature = features[index];
+                  return _buildFeatureCard(
+                    colorScheme,
+                    feature['icon'] as IconData,
+                    feature['title'] as String,
+                    feature['description'] as String,
+                  );
+                },
               );
             },
           ),
@@ -395,46 +403,51 @@ class _LandingScreenState extends State<LandingScreen>
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.15)),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: colorScheme.shadow.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                color: colorScheme.primaryContainer.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: colorScheme.primary, size: 28),
+              child: Icon(icon, color: colorScheme.primary, size: 20),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               title,
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-                height: 1.5,
+            const SizedBox(height: 6),
+            Expanded(
+              child: Text(
+                description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurface.withValues(alpha: 0.65),
+                  height: 1.4,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
