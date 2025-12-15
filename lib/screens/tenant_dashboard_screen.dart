@@ -276,6 +276,16 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     final session = context.watch<SessionProvider>().session;
     final tenantId = tenantProvider.tenantId;
 
+    // Restaure le tenant après un rafraîchissement si la session est connue
+    if (tenantId == null && session?.tenantId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final restoredTenant = session?.tenantId;
+        if (restoredTenant != null && restoredTenant.isNotEmpty) {
+          tenantProvider.setTenant(tenantId: restoredTenant);
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
