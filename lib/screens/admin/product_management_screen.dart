@@ -5,6 +5,7 @@ import '../../models/product.dart';
 import '../../providers/tenant_provider.dart';
 import '../../repositories/products_repository.dart';
 import '../../widgets/action_button.dart';
+import '../employee/product_detail_screen.dart';
 
 class ProductManagementScreen extends StatefulWidget {
   final String userId;
@@ -195,6 +196,23 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            ActionButton(
+                              icon: Icons.sync_alt,
+                              onPressed: () {
+                                Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (context) => ProductDetailScreen(
+                                      product: product,
+                                      userId: widget.userId,
+                                      userName: widget.userName,
+                                    ),
+                                  ),
+                                );
+                              },
+                              tooltip: 'Entrée / Sortie de stock',
+                              isSecondary: true,
+                            ),
                             ActionButton(
                               icon: Icons.edit,
                               onPressed: () => _showEditProductDialog(context, product),
