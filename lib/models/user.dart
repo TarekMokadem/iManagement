@@ -23,10 +23,19 @@ class AppUser {
       'code': code,
       'isAdmin': isAdmin,
       'tenantId': tenantId,
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
     };
   }
 
   factory AppUser.fromMap(Map<String, dynamic> map) {
+    String _asString(dynamic v) => v == null ? '' : v.toString();
+    bool _asBool(dynamic v) {
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      if (v is String) return v.toLowerCase() == 'true';
+      return false;
+    }
+
     final rawCreatedAt = map['createdAt'];
     DateTime? createdAt;
     if (rawCreatedAt is Timestamp) {
@@ -35,11 +44,11 @@ class AppUser {
       createdAt = DateTime.tryParse(rawCreatedAt);
     }
     return AppUser(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      code: map['code'] as String,
-      isAdmin: (map['isAdmin'] as bool?) ?? false,
-      tenantId: (map['tenantId'] as String?) ?? 'default',
+      id: _asString(map['id']),
+      name: _asString(map['name']),
+      code: _asString(map['code']),
+      isAdmin: _asBool(map['isAdmin']),
+      tenantId: _asString(map['tenantId']).isEmpty ? 'default' : _asString(map['tenantId']),
       createdAt: createdAt,
     );
   }
