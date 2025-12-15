@@ -69,6 +69,10 @@ class PublicLayout extends StatelessWidget {
       actions: [
         if (!isMobile) ...[
           _NavButton(
+            label: 'Accueil',
+            onPressed: () => _navigateTo(context, '/'),
+          ),
+          _NavButton(
             label: 'Fonctionnalités',
             onPressed: () => _navigateTo(context, '/features'),
           ),
