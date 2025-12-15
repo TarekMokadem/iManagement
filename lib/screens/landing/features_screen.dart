@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/public_layout.dart';
+import '../../widgets/animations/fx_text_fade_top.dart';
 
 class FeaturesScreen extends StatefulWidget {
   const FeaturesScreen({super.key});
@@ -74,14 +75,16 @@ class _FeaturesScreenState extends State<FeaturesScreen>
       ),
       child: Column(
         children: [
-          Text(
-            'Fonctionnalités puissantes',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isMobile ? 36 : 52,
-              fontWeight: FontWeight.w800,
-              color: colorScheme.onSurface,
-              letterSpacing: -1,
+          FxTextFadeTop(
+            child: Text(
+              'Fonctionnalités puissantes',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: isMobile ? 36 : 52,
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
+                letterSpacing: -1,
+              ),
             ),
           ),
           const SizedBox(height: 20),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/public_layout.dart';
+import '../../widgets/animations/fx_text_fade_top.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -105,14 +106,16 @@ class _LandingScreenState extends State<LandingScreen>
                 ),
               ),
               const SizedBox(height: 32),
-              Text(
-                'Gérez votre stock\navec simplicité',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isMobile ? 36 : 56,
-                  fontWeight: FontWeight.bold,
-                  height: 1.1,
-                  color: colorScheme.onSurface,
+              FxTextFadeTop(
+                child: Text(
+                  'Gérez votre stock\navec simplicité',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isMobile ? 36 : 56,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

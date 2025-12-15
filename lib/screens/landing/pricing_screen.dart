@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../widgets/public_layout.dart';
+import '../../widgets/animations/fx_text_fade_top.dart';
 
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
@@ -78,14 +79,16 @@ class _PricingScreenState extends State<PricingScreen>
       ),
       child: Column(
         children: [
-          Text(
-            'Tarifs simples et transparents',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isMobile ? 36 : 52,
-              fontWeight: FontWeight.w800,
-              color: colorScheme.onSurface,
-              letterSpacing: -1,
+          FxTextFadeTop(
+            child: Text(
+              'Tarifs simples et transparents',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: isMobile ? 36 : 52,
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
+                letterSpacing: -1,
+              ),
             ),
           ),
           const SizedBox(height: 20),
